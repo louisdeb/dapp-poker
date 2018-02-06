@@ -1,10 +1,14 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.19;
+
+import "./Dealer.sol";
 
 contract Casino {
     uint constant minPlayers = 2;
     uint constant maxPlayers = 6;
     address[] playerAddresses;
     bool playing = false;
+
+    Dealer dealer;
 
     function joinGame(address playerAddress) public {
         if (playerAddresses.length < maxPlayers && !playing) {
@@ -18,5 +22,6 @@ contract Casino {
 
     function playGame() private {
         playing = true;
+        dealer = new Dealer();
     }
 }
