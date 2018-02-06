@@ -1,0 +1,2 @@
+# We don't want to add node_modules to git. It's better to let npm resolve the dependencies by itself
+node_modules/
