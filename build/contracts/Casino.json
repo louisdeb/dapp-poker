@@ -1,0 +1,759 @@
+{
+  "contractName": "Casino",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "playerAddress",
+          "type": "address"
+        }
+      ],
+      "name": "joinGame",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60606040526000600160006101000a81548160ff021916908315150217905550341561002a57600080fd5b6101bd806100396000396000f300606060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632389a29014610046575b600080fd5b341561005157600080fd5b61007d600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061007f565b005b60066000805490501080156100a15750600160009054906101000a900460ff16155b1561012157600080548060010182816100ba9190610140565b9160005260206000209001600083909190916101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050600260008054905011156101205761011f610124565b5b5b50565b60018060006101000a81548160ff021916908315150217905550565b81548183558181151161016757818360005260206000209182019101610166919061016c565b5b505050565b61018e91905b8082111561018a576000816000905550600101610172565b5090565b905600a165627a7a72305820ab20f53d3b750aa7afb8aeb698aa1b897a7f39971999d8123f318c4d983c668e0029",
+  "deployedBytecode": "0x606060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632389a29014610046575b600080fd5b341561005157600080fd5b61007d600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061007f565b005b60066000805490501080156100a15750600160009054906101000a900460ff16155b1561012157600080548060010182816100ba9190610140565b9160005260206000209001600083909190916101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050600260008054905011156101205761011f610124565b5b5b50565b60018060006101000a81548160ff021916908315150217905550565b81548183558181151161016757818360005260206000209182019101610166919061016c565b5b505050565b61018e91905b8082111561018a576000816000905550600101610172565b5090565b905600a165627a7a72305820ab20f53d3b750aa7afb8aeb698aa1b897a7f39971999d8123f318c4d983c668e0029",
+  "sourceMap": "25:626:0:-;;;161:5;146:20;;;;;;;;;;;;;;;;;;;;25:626;;;;;;;;;;;;;;",
+  "deployedSourceMap": "25:626:0:-;;;;;;;;;;;;;;;;;;;;;;;;173:411;;;;;;;;;;;;;;;;;;;;;;;;;;;;;108:1;235:15;:22;;;;:35;:47;;;;;275:7;;;;;;;;;;;274:8;235:47;231:347;;;298:15;:35;;;;;;;;;;;:::i;:::-;;;;;;;;;;319:13;298:35;;;;;;;;;;;;;;;;;;;;;;;74:1;351:15;:22;;;;:35;347:220;;;557:10;:8;:10::i;:::-;347:220;231:347;173:411;:::o;590:59::-;638:4;628:7;;:14;;;;;;;;;;;;;;;;;;590:59::o;25:626::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;:::o",
+  "source": "pragma solidity ^0.4.0;\n\ncontract Casino {\n    uint constant minPlayers = 2;\n    uint constant maxPlayers = 6;\n    address[] playerAddresses;\n    bool playing = false;\n\n    function joinGame(address playerAddress) public {\n        if (playerAddresses.length < maxPlayers && !playing) {\n            playerAddresses.push(playerAddress);\n            if (playerAddresses.length > minPlayers)\n                // could add some 'vote ready' functionality to wait for more players\n                // currently will just wait till we have 2 players\n                playGame();\n        }\n    }\n\n    function playGame() private {\n        playing = true;\n    }\n}\n",
+  "sourcePath": "/Users/louis/Documents/dapp-poker/contracts/Casino.sol",
+  "ast": {
+    "attributes": {
+      "absolutePath": "/Users/louis/Documents/dapp-poker/contracts/Casino.sol",
+      "exportedSymbols": {
+        "Casino": [
+          51
+        ]
+      }
+    },
+    "children": [
+      {
+        "attributes": {
+          "literals": [
+            "solidity",
+            "^",
+            "0.4",
+            ".0"
+          ]
+        },
+        "id": 1,
+        "name": "PragmaDirective",
+        "src": "0:23:0"
+      },
+      {
+        "attributes": {
+          "baseContracts": [
+            null
+          ],
+          "contractDependencies": [
+            null
+          ],
+          "contractKind": "contract",
+          "documentation": null,
+          "fullyImplemented": true,
+          "linearizedBaseContracts": [
+            51
+          ],
+          "name": "Casino",
+          "scope": 52
+        },
+        "children": [
+          {
+            "attributes": {
+              "constant": true,
+              "name": "minPlayers",
+              "scope": 51,
+              "stateVariable": true,
+              "storageLocation": "default",
+              "type": "uint256",
+              "visibility": "internal"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "name": "uint",
+                  "type": "uint256"
+                },
+                "id": 2,
+                "name": "ElementaryTypeName",
+                "src": "47:4:0"
+              },
+              {
+                "attributes": {
+                  "argumentTypes": null,
+                  "hexvalue": "32",
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "lValueRequested": false,
+                  "subdenomination": null,
+                  "token": "number",
+                  "type": "int_const 2",
+                  "value": "2"
+                },
+                "id": 3,
+                "name": "Literal",
+                "src": "74:1:0"
+              }
+            ],
+            "id": 4,
+            "name": "VariableDeclaration",
+            "src": "47:28:0"
+          },
+          {
+            "attributes": {
+              "constant": true,
+              "name": "maxPlayers",
+              "scope": 51,
+              "stateVariable": true,
+              "storageLocation": "default",
+              "type": "uint256",
+              "visibility": "internal"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "name": "uint",
+                  "type": "uint256"
+                },
+                "id": 5,
+                "name": "ElementaryTypeName",
+                "src": "81:4:0"
+              },
+              {
+                "attributes": {
+                  "argumentTypes": null,
+                  "hexvalue": "36",
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "lValueRequested": false,
+                  "subdenomination": null,
+                  "token": "number",
+                  "type": "int_const 6",
+                  "value": "6"
+                },
+                "id": 6,
+                "name": "Literal",
+                "src": "108:1:0"
+              }
+            ],
+            "id": 7,
+            "name": "VariableDeclaration",
+            "src": "81:28:0"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "name": "playerAddresses",
+              "scope": 51,
+              "stateVariable": true,
+              "storageLocation": "default",
+              "type": "address[] storage ref",
+              "value": null,
+              "visibility": "internal"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "length": null,
+                  "type": "address[] storage pointer"
+                },
+                "children": [
+                  {
+                    "attributes": {
+                      "name": "address",
+                      "type": "address"
+                    },
+                    "id": 8,
+                    "name": "ElementaryTypeName",
+                    "src": "115:7:0"
+                  }
+                ],
+                "id": 9,
+                "name": "ArrayTypeName",
+                "src": "115:9:0"
+              }
+            ],
+            "id": 10,
+            "name": "VariableDeclaration",
+            "src": "115:25:0"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "name": "playing",
+              "scope": 51,
+              "stateVariable": true,
+              "storageLocation": "default",
+              "type": "bool",
+              "visibility": "internal"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "name": "bool",
+                  "type": "bool"
+                },
+                "id": 11,
+                "name": "ElementaryTypeName",
+                "src": "146:4:0"
+              },
+              {
+                "attributes": {
+                  "argumentTypes": null,
+                  "hexvalue": "66616c7365",
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "lValueRequested": false,
+                  "subdenomination": null,
+                  "token": "bool",
+                  "type": "bool",
+                  "value": "false"
+                },
+                "id": 12,
+                "name": "Literal",
+                "src": "161:5:0"
+              }
+            ],
+            "id": 13,
+            "name": "VariableDeclaration",
+            "src": "146:20:0"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "joinGame",
+              "payable": false,
+              "scope": 51,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "playerAddress",
+                      "scope": 42,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 14,
+                        "name": "ElementaryTypeName",
+                        "src": "191:7:0"
+                      }
+                    ],
+                    "id": 15,
+                    "name": "VariableDeclaration",
+                    "src": "191:21:0"
+                  }
+                ],
+                "id": 16,
+                "name": "ParameterList",
+                "src": "190:23:0"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 17,
+                "name": "ParameterList",
+                "src": "221:0:0"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "falseBody": null
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "commonType": {
+                            "typeIdentifier": "t_bool",
+                            "typeString": "bool"
+                          },
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "&&",
+                          "type": "bool"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "commonType": {
+                                "typeIdentifier": "t_uint256",
+                                "typeString": "uint256"
+                              },
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "operator": "<",
+                              "type": "bool"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": true,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "member_name": "length",
+                                  "referencedDeclaration": null,
+                                  "type": "uint256"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 10,
+                                      "type": "address[] storage ref",
+                                      "value": "playerAddresses"
+                                    },
+                                    "id": 18,
+                                    "name": "Identifier",
+                                    "src": "235:15:0"
+                                  }
+                                ],
+                                "id": 19,
+                                "name": "MemberAccess",
+                                "src": "235:22:0"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 7,
+                                  "type": "uint256",
+                                  "value": "maxPlayers"
+                                },
+                                "id": 20,
+                                "name": "Identifier",
+                                "src": "260:10:0"
+                              }
+                            ],
+                            "id": 21,
+                            "name": "BinaryOperation",
+                            "src": "235:35:0"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "operator": "!",
+                              "prefix": true,
+                              "type": "bool"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 13,
+                                  "type": "bool",
+                                  "value": "playing"
+                                },
+                                "id": 22,
+                                "name": "Identifier",
+                                "src": "275:7:0"
+                              }
+                            ],
+                            "id": 23,
+                            "name": "UnaryOperation",
+                            "src": "274:8:0"
+                          }
+                        ],
+                        "id": 24,
+                        "name": "BinaryOperation",
+                        "src": "235:47:0"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "isStructConstructorCall": false,
+                                  "lValueRequested": false,
+                                  "names": [
+                                    null
+                                  ],
+                                  "type": "uint256",
+                                  "type_conversion": false
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": [
+                                        {
+                                          "typeIdentifier": "t_address",
+                                          "typeString": "address"
+                                        }
+                                      ],
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": false,
+                                      "lValueRequested": false,
+                                      "member_name": "push",
+                                      "referencedDeclaration": null,
+                                      "type": "function (address) returns (uint256)"
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 10,
+                                          "type": "address[] storage ref",
+                                          "value": "playerAddresses"
+                                        },
+                                        "id": 25,
+                                        "name": "Identifier",
+                                        "src": "298:15:0"
+                                      }
+                                    ],
+                                    "id": 27,
+                                    "name": "MemberAccess",
+                                    "src": "298:20:0"
+                                  },
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 15,
+                                      "type": "address",
+                                      "value": "playerAddress"
+                                    },
+                                    "id": 28,
+                                    "name": "Identifier",
+                                    "src": "319:13:0"
+                                  }
+                                ],
+                                "id": 29,
+                                "name": "FunctionCall",
+                                "src": "298:35:0"
+                              }
+                            ],
+                            "id": 30,
+                            "name": "ExpressionStatement",
+                            "src": "298:35:0"
+                          },
+                          {
+                            "attributes": {
+                              "falseBody": null
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "commonType": {
+                                    "typeIdentifier": "t_uint256",
+                                    "typeString": "uint256"
+                                  },
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "operator": ">",
+                                  "type": "bool"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "isConstant": false,
+                                      "isLValue": true,
+                                      "isPure": false,
+                                      "lValueRequested": false,
+                                      "member_name": "length",
+                                      "referencedDeclaration": null,
+                                      "type": "uint256"
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 10,
+                                          "type": "address[] storage ref",
+                                          "value": "playerAddresses"
+                                        },
+                                        "id": 31,
+                                        "name": "Identifier",
+                                        "src": "351:15:0"
+                                      }
+                                    ],
+                                    "id": 32,
+                                    "name": "MemberAccess",
+                                    "src": "351:22:0"
+                                  },
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 4,
+                                      "type": "uint256",
+                                      "value": "minPlayers"
+                                    },
+                                    "id": 33,
+                                    "name": "Identifier",
+                                    "src": "376:10:0"
+                                  }
+                                ],
+                                "id": 34,
+                                "name": "BinaryOperation",
+                                "src": "351:35:0"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "arguments": [
+                                        null
+                                      ],
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": false,
+                                      "isStructConstructorCall": false,
+                                      "lValueRequested": false,
+                                      "names": [
+                                        null
+                                      ],
+                                      "type": "tuple()",
+                                      "type_conversion": false
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": [
+                                            null
+                                          ],
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 50,
+                                          "type": "function ()",
+                                          "value": "playGame"
+                                        },
+                                        "id": 35,
+                                        "name": "Identifier",
+                                        "src": "557:8:0"
+                                      }
+                                    ],
+                                    "id": 36,
+                                    "name": "FunctionCall",
+                                    "src": "557:10:0"
+                                  }
+                                ],
+                                "id": 37,
+                                "name": "ExpressionStatement",
+                                "src": "557:10:0"
+                              }
+                            ],
+                            "id": 38,
+                            "name": "IfStatement",
+                            "src": "347:220:0"
+                          }
+                        ],
+                        "id": 39,
+                        "name": "Block",
+                        "src": "284:294:0"
+                      }
+                    ],
+                    "id": 40,
+                    "name": "IfStatement",
+                    "src": "231:347:0"
+                  }
+                ],
+                "id": 41,
+                "name": "Block",
+                "src": "221:363:0"
+              }
+            ],
+            "id": 42,
+            "name": "FunctionDefinition",
+            "src": "173:411:0"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "playGame",
+              "payable": false,
+              "scope": 51,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "private"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 43,
+                "name": "ParameterList",
+                "src": "607:2:0"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 44,
+                "name": "ParameterList",
+                "src": "618:0:0"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "=",
+                          "type": "bool"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 13,
+                              "type": "bool",
+                              "value": "playing"
+                            },
+                            "id": 45,
+                            "name": "Identifier",
+                            "src": "628:7:0"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "hexvalue": "74727565",
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "subdenomination": null,
+                              "token": "bool",
+                              "type": "bool",
+                              "value": "true"
+                            },
+                            "id": 46,
+                            "name": "Literal",
+                            "src": "638:4:0"
+                          }
+                        ],
+                        "id": 47,
+                        "name": "Assignment",
+                        "src": "628:14:0"
+                      }
+                    ],
+                    "id": 48,
+                    "name": "ExpressionStatement",
+                    "src": "628:14:0"
+                  }
+                ],
+                "id": 49,
+                "name": "Block",
+                "src": "618:31:0"
+              }
+            ],
+            "id": 50,
+            "name": "FunctionDefinition",
+            "src": "590:59:0"
+          }
+        ],
+        "id": 51,
+        "name": "ContractDefinition",
+        "src": "25:626:0"
+      }
+    ],
+    "id": 52,
+    "name": "SourceUnit",
+    "src": "0:652:0"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.19+commit.c4cbbb05.Emscripten.clang"
+  },
+  "networks": {
+    "5777": {
+      "events": {},
+      "links": {},
+      "address": "0x345ca3e014aaf5dca488057592ee47305d9b3e10"
+    }
+  },
+  "schemaVersion": "1.0.1",
+  "updatedAt": "2018-02-06T12:19:29.492Z"
+}
