@@ -4,15 +4,22 @@ contract Casino {
   // Player information
   address private owner;
   address[] private players;
+  address[] private currentPlayers;
 
   // Game parameters
   uint constant minPlayers = 2;
   uint constant maxPlayers = 6;
+  uint constant smallBlindCost = 1 finney;
+  uint constant bigBlindCost = 2 finney; // 1000 finney = 1 eth
 
   // State variables
   bool private playing = false;
-  uint private turn = 0;
+  uint private smallBlind = 0; // Index of player paying small blind
+  uint private currentPlayer = 0; // Index of player currently betting
+  uint private round = 0;
   uint[52] private deck;
+  bool private smallBlindPayed = false;
+  bool private bigBlindPayed = false;
 
   function Casino() public {
     owner = msg.sender;
@@ -23,12 +30,39 @@ contract Casino {
     _;
   }
 
+  modifier onlySmallBlind() {
+    require(msg.sender == players[smallBlind]);
+    _;
+  }
+
+  modifier onlyBigBlind() {
+    require(msg.sender == players[(smallBlind+1)%players.length]);
+    _;
+  }
+
+  modifier onlyOnceBlindsPayed() {
+    require(smallBlindPayed && bigBlindPayed);
+    _;
+  }
+
+  modifier onlyRound(uint n) {
+    require(round == n);
+    _;
+  }
+
+  modifier costs(uint price) {
+    require(msg.value >= price);
+    _;
+  }
+
   // Allows a player to request to join the game
+  // Could add a cost, paid to the owner
   function joinGame() public {
     if (players.length > maxPlayers || playing)
       revert();
 
     players.push(msg.sender);
+    currentPlayers.push(msg.sender);
   }
 
   // Leave game functionality?
@@ -39,7 +73,11 @@ contract Casino {
       revert();
 
     playing = true;
+    round = 0;
+
     shuffleCards();
+    smallBlind = (smallBlind + 1) % players.length;
+    currentPlayer = (smallBlind + 2) % players.length;
   }
 
   // 0: blinds, dealing, initial bets
@@ -70,6 +108,18 @@ contract Casino {
     }
 
     return cards;
+  }
+
+  function paySmallBlind() public payable
+  onlySmallBlind onlyRound(0) costs(smallBlindCost) {
+
+    smallBlindPayed = true;
+  }
+
+  function payBigBlind() public payable
+  onlyBigBlind onlyRound(0) costs(bigBlindCost) {
+
+    bigBlindPayed = true;
   }
 
   // can use a mapping to store a bet
