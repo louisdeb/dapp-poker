@@ -213,8 +213,28 @@ contract Casino {
     incrementCurrentPlayer();
   }
 
-  function fold() public onlyCurrentPlayer whenPlaying {
+  function fold() public onlyCurrentPlayer onlyOnceBlindsPayed whenPlaying {
+    uint i = 0;
+    for (i; i < currentPlayers.length; i++) {
+      if (currentPlayers[i] == msg.sender) {
+        for (uint j=i; j < currentPlayers.length-1; j++) {
+          currentPlayers[i] = currentPlayers[i+1];
+        }
 
+        delete currentPlayers[currentPlayers.length-1];
+        break;
+      }
+    }
+
+    checkWin();
+  }
+
+  function checkWin() private whenPlaying {
+      if (currentPlayers.length == 1) {
+          // win for the final player
+      }
+
+      // otherwise reveal hands & determine winner
   }
 
 }
