@@ -130,7 +130,7 @@ contract Casino {
     smallBlindPayed = true;
     setMaxBet(msg.value);
     if(bigBlindPayed)
-        deal();
+      deal();
   }
 
   function payBigBlind() public payable
@@ -138,7 +138,7 @@ contract Casino {
     bigBlindPayed = true;
     setMaxBet(msg.value);
     if(smallBlindPayed)
-        deal();
+      deal();
   }
 
   function setMaxBet(uint bet) private {
@@ -146,14 +146,14 @@ contract Casino {
   }
 
   function deal() private onlyRound(0) onlyOnceBlindsPayed whenNotDealt {
-      dealt = true;
-      uint numPlayers = players.length;
-      for(uint i=0; i < numPlayers; i++) {
-        hands[players[i]].first = drawCard();
-      }
-      for(uint j=0; j < numPlayers; j++) {
-        hands[players[j]].second = drawCard();
-      }
+    dealt = true;
+    uint numPlayers = players.length;
+    for(uint i=0; i < numPlayers; i++) {
+      hands[players[i]].first = drawCard();
+    }
+    for(uint j=0; j < numPlayers; j++) {
+      hands[players[j]].second = drawCard();
+     }
   }
 
   function drawCard() private returns (uint) {
@@ -172,38 +172,45 @@ contract Casino {
   }
 
   function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
-      uint currentBet = bets[msg.sender];
-      if(currentBet + msg.value < maxBet)
-        revert();
+    uint currentBet = bets[msg.sender];
+    if(currentBet + msg.value < maxBet)
+      revert();
 
-      bets[msg.sender] = currentBet + msg.value;
-      setMaxBet(bets[msg.sender]);
-      incrementCurrentPlayer();
-      tryIncrementRound();
+    bets[msg.sender] = currentBet + msg.value;
+    setMaxBet(bets[msg.sender]);
+    incrementCurrentPlayer();
+    tryIncrementRound();
   }
 
   function incrementCurrentPlayer() private {
-      currentPlayer = (currentPlayer + 1) % currentPlayers.length;
+    currentPlayer = (currentPlayer + 1) % currentPlayers.length;
   }
 
   function tryIncrementRound() private {
-      uint numPlayers = currentPlayers.length;
-      uint previousBet = bets[currentPlayers[0]];
-      bool mismatch = false;
+    uint numPlayers = currentPlayers.length;
+    uint previousBet = bets[currentPlayers[0]];
+    bool mismatch = false;
 
-      for (uint i=1; i < numPlayers; i++) {
-          uint playerBet = bets[currentPlayers[i]];
-          if (previousBet != playerBet) {
-            mismatch = true;
-            break;
-          }
-          previousBet = playerBet;
+    for (uint i=1; i < numPlayers; i++) {
+      uint playerBet = bets[currentPlayers[i]];
+      if (previousBet != playerBet) {
+        mismatch = true;
+        break;
       }
+      previousBet = playerBet;
+    }
 
-      if (!mismatch) {
-          round++;
-          // deal another card or whatever
-      }
+    if (!mismatch) {
+      round++;
+      // deal another card or whatever
+    }
+  }
+
+  function check() public onlyCurrentPlayer whenPlaying {
+    if (bets[msg.sender] != maxBet)
+      revert();
+
+    incrementCurrentPlayer();
   }
 
   function fold() public onlyCurrentPlayer whenPlaying {
