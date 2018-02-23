@@ -1,6 +1,12 @@
 pragma solidity ^0.4.19;
 
 contract Casino {
+
+  struct Hand {
+      uint first;
+      uint second;
+  }
+
   // Player information
   address public owner;
   address[] private players;
@@ -18,8 +24,11 @@ contract Casino {
   uint private currentPlayer = 0; // Index of player currently betting
   uint private round = 0;
   uint[52] private deck;
+  uint private deckLength = 52;
   bool private smallBlindPayed = false;
   bool private bigBlindPayed = false;
+
+  mapping(address => Hand) private hands;
 
   function Casino() public {
     owner = msg.sender;
@@ -27,6 +36,11 @@ contract Casino {
 
   modifier onlyOwner() {
     require(msg.sender == owner);
+    _;
+  }
+
+  modifier whenPlaying() {
+    require(playing);
     _;
   }
 
@@ -93,21 +107,42 @@ contract Casino {
   }
 
   function paySmallBlind() public payable
-  onlySmallBlind onlyRound(0) costs(smallBlindCost) {
+  onlySmallBlind onlyRound(0) whenPlaying costs(smallBlindCost) {
     smallBlindPayed = true;
     if(bigBlindPayed)
         deal();
   }
 
   function payBigBlind() public payable
-  onlyBigBlind onlyRound(0) costs(bigBlindCost) {
+  onlyBigBlind onlyRound(0) whenPlaying costs(bigBlindCost) {
     bigBlindPayed = true;
     if(smallBlindPayed)
         deal();
   }
 
   function deal() private onlyRound(0) onlyOnceBlindsPayed {
+      uint numPlayers = players.length;
+      for(uint i=0; i < numPlayers; i++) {
+        hands[players[i]].first = drawCard();
+      }
+      for(uint j=0; j < numPlayers; j++) {
+        hands[players[j]].second = drawCard();
+      }
+  }
 
+  function drawCard() private returns (uint) {
+      uint card = deck[deckLength-1];
+      deckLength--;
+      return card;
+  }
+
+  function getHand() public view whenPlaying returns (uint, uint) {
+    return (hands[msg.sender].first, hands[msg.sender].second);
+  }
+
+  // Can be used to test shuffling but should be removed after that
+  function getDeck() public view whenPlaying returns (uint[52]) {
+    return deck;
   }
 
   // can use a mapping to store a bet
