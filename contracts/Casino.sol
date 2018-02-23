@@ -16,19 +16,22 @@ contract Casino {
   uint constant minPlayers = 2;
   uint constant maxPlayers = 6;
   uint constant smallBlindCost = 1 finney;
-  uint constant bigBlindCost = 2 finney; // 1000 finney = 1 eth
+  uint constant bigBlindCost = 2 finney;
 
   // State variables
   bool private playing = false;
   uint private smallBlind = 0; // Index of player paying small blind
   uint private currentPlayer = 0; // Index of player currently betting
+  uint private maxBet = 0;
   uint private round = 0;
   uint[52] private deck;
   uint private deckLength = 52;
   bool private smallBlindPayed = false;
   bool private bigBlindPayed = false;
+  bool private dealt = false;
 
   mapping(address => Hand) private hands;
+  mapping(address => uint) private bets;
 
   function Casino() public {
     owner = msg.sender;
@@ -42,6 +45,16 @@ contract Casino {
   modifier whenPlaying() {
     require(playing);
     _;
+  }
+
+  modifier whenNotDealt() {
+      require(!dealt);
+      _;
+  }
+
+  modifier whenDealt() {
+      require(dealt);
+      _;
   }
 
   modifier onlySmallBlind() {
@@ -59,13 +72,18 @@ contract Casino {
     _;
   }
 
+  modifier onlyCurrentPlayer() {
+      require(msg.sender == players[currentPlayer]);
+      _;
+  }
+
   modifier onlyRound(uint n) {
     require(round == n);
     _;
   }
 
   modifier costs(uint price) {
-    require(msg.value >= price);
+    require(msg.value == price);
     _;
   }
 
@@ -88,8 +106,9 @@ contract Casino {
     round = 0;
 
     shuffleCards();
-    smallBlind = (smallBlind + 1) % players.length;
-    currentPlayer = (smallBlind + 2) % players.length;
+
+    smallBlind = (smallBlind + 1) % players.length; // increment small blind
+    currentPlayer = (smallBlind + 2) % players.length; // start with player after big blind
   }
 
   // ROUNDS
@@ -109,6 +128,7 @@ contract Casino {
   function paySmallBlind() public payable
   onlySmallBlind onlyRound(0) whenPlaying costs(smallBlindCost) {
     smallBlindPayed = true;
+    setMaxBet(msg.value);
     if(bigBlindPayed)
         deal();
   }
@@ -116,11 +136,17 @@ contract Casino {
   function payBigBlind() public payable
   onlyBigBlind onlyRound(0) whenPlaying costs(bigBlindCost) {
     bigBlindPayed = true;
+    setMaxBet(msg.value);
     if(smallBlindPayed)
         deal();
   }
 
-  function deal() private onlyRound(0) onlyOnceBlindsPayed {
+  function setMaxBet(uint bet) private {
+      maxBet = bet > maxBet ? bet : maxBet;
+  }
+
+  function deal() private onlyRound(0) onlyOnceBlindsPayed whenNotDealt {
+      dealt = true;
       uint numPlayers = players.length;
       for(uint i=0; i < numPlayers; i++) {
         hands[players[i]].first = drawCard();
@@ -145,6 +171,27 @@ contract Casino {
     return deck;
   }
 
-  // can use a mapping to store a bet
-  // can use a modifier to make sure we accept bets from the right player
+  function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
+      uint currentBet = bets[msg.sender];
+      if(currentBet + msg.value < maxBet)
+        revert();
+
+      bets[msg.sender] = currentBet + msg.value;
+      setMaxBet(bets[msg.sender]);
+      incrementCurrentPlayer();
+      tryIncrementRound();
+  }
+
+  function incrementCurrentPlayer() private {
+      currentPlayer = (currentPlayer + 1) % currentPlayers.length;
+  }
+
+  function tryIncrementRound() private {
+
+  }
+
+  function fold() public onlyCurrentPlayer whenPlaying {
+
+  }
+
 }
