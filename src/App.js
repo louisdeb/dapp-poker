@@ -34,15 +34,18 @@ class App extends Component {
   instantiateContract() {
     const contract = require('truffle-contract');
     const casino = contract(CasinoContract);
+    casino.setProvider(this.state.web3.currentProvider);
+
+    var _casino; // the instance
 
     // Get accounts.
     this.state.web3.eth.getAccounts((error, accounts) => {
-      // Not sure why this fix is required. The contract's web3 has an undefined
-      // `currentProvider` otherwise.
-      casino.web3 = this.state.web3;
-
       casino.deployed().then((instance) => {
-        // Can call Casino functions in here
+        _casino = instance;
+        this.state.web3.eth.defaultAccount = accounts[0];
+        _casino.joinGame.call({
+          'from': accounts[0]
+        });
       }).then((result) => {
         // And chain them
       });

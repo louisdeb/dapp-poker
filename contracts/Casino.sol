@@ -2,7 +2,7 @@ pragma solidity ^0.4.19;
 
 contract Casino {
   // Player information
-  address private owner;
+  address public owner;
   address[] private players;
   address[] private currentPlayers;
 
@@ -65,8 +65,6 @@ contract Casino {
     currentPlayers.push(msg.sender);
   }
 
-  // Leave game functionality?
-
   // Start the game. Only the owner can start the game
   function startGame() public onlyOwner {
     if (players.length < minPlayers || playing)
@@ -80,6 +78,7 @@ contract Casino {
     currentPlayer = (smallBlind + 2) % players.length;
   }
 
+  // ROUNDS
   // 0: blinds, dealing, initial bets
   // 1: flop dealt, another round of betting
   // 2: turn card dealt, another round of betting
@@ -87,39 +86,28 @@ contract Casino {
   // 4: showdown: cards revealed & pot distributed ... blinds rotated
 
   // Load a deck of cards & shuffle it
+  // NB: Shuffling not implemented due to infinite loop possibility
   function shuffleCards() private {
-    uint[52] memory cards;
-    for(uint i = 0; i < 52; i++)
-      cards[i] = i;
-
-    deck = shuffle(cards);
-  }
-
-  function shuffle(uint[52] cards) private pure returns (uint[52]) {
-    for (var i = cards.length - 1; i > 0; i--) {
-      uint random_number = 1;
-      // Old implementation: uint(block.blockhash(block.number-1))%10 + 1;
-      // To be refined.
-
-      uint j = random_number * (i + 1);
-      uint temp = cards[i];
-      cards[i] = cards[j];
-      cards[j] = temp;
-    }
-
-    return cards;
+    // Great shuffling
+    deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
   }
 
   function paySmallBlind() public payable
   onlySmallBlind onlyRound(0) costs(smallBlindCost) {
-
     smallBlindPayed = true;
+    if(bigBlindPayed)
+        deal();
   }
 
   function payBigBlind() public payable
   onlyBigBlind onlyRound(0) costs(bigBlindCost) {
-
     bigBlindPayed = true;
+    if(smallBlindPayed)
+        deal();
+  }
+
+  function deal() private onlyRound(0) onlyOnceBlindsPayed {
+
   }
 
   // can use a mapping to store a bet
