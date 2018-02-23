@@ -187,7 +187,23 @@ contract Casino {
   }
 
   function tryIncrementRound() private {
+      uint numPlayers = currentPlayers.length;
+      uint previousBet = bets[currentPlayers[0]];
+      bool mismatch = false;
 
+      for (uint i=1; i < numPlayers; i++) {
+          uint playerBet = bets[currentPlayers[i]];
+          if (previousBet != playerBet) {
+            mismatch = true;
+            break;
+          }
+          previousBet = playerBet;
+      }
+
+      if (!mismatch) {
+          round++;
+          // deal another card or whatever
+      }
   }
 
   function fold() public onlyCurrentPlayer whenPlaying {
