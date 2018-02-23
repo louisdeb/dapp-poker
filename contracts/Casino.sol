@@ -200,6 +200,7 @@ contract Casino {
       previousBet = playerBet;
     }
 
+    // has a problem when first player checks but another player wants to bet
     if (!mismatch) {
       round++;
       // deal another card or whatever
