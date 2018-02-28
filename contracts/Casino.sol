@@ -20,7 +20,6 @@ contract Casino {
 
   // State variables
   bool private playing = false;
-  uint private smallBlind = 0; // Index of player paying small blind
   uint private currentPlayer = 0; // Index of player currently betting
   uint private maxBet = 0;
   uint private round = 0;
@@ -57,23 +56,13 @@ contract Casino {
       _;
   }
 
-  modifier onlySmallBlind() {
-    require(msg.sender == players[smallBlind]);
-    _;
-  }
-
-  modifier onlyBigBlind() {
-    require(msg.sender == players[(smallBlind+1)%players.length]);
-    _;
-  }
-
   modifier onlyOnceBlindsPayed() {
     require(smallBlindPayed && bigBlindPayed);
     _;
   }
 
   modifier onlyCurrentPlayer() {
-      require(msg.sender == players[currentPlayer]);
+      require(msg.sender == currentPlayers[getCurrentPlayer()]);
       _;
   }
 
@@ -87,6 +76,34 @@ contract Casino {
     _;
   }
 
+  function getHand() public view whenPlaying returns (uint, uint) {
+    return (hands[msg.sender].first, hands[msg.sender].second);
+  }
+
+  // Can be used to test shuffling but should be removed after that
+  function getDeck() public view whenPlaying returns (uint[52]) {
+    return deck;
+  }
+
+  function getMaxBet() public view whenPlaying returns (uint) {
+      return maxBet;
+  }
+
+  function getMyBet() public view whenPlaying returns (uint) {
+      return bets[msg.sender];
+  }
+
+  function getCurrentPlayers() public view whenPlaying returns (uint, address[]) {
+      return (getCurrentPlayer(), currentPlayers);
+  }
+
+  // Due to trouble reducing currentPlayer, we use this function to find the
+  // correct index of currentPlayer.
+  // currentPlayer shouldn't be read from directly. (Use this function)
+  function getCurrentPlayer() private view returns (uint) {
+      return currentPlayer % currentPlayers.length;
+  }
+
   // Allows a player to request to join the game
   // Could add a cost, paid to the owner
   function joinGame() public {
@@ -94,7 +111,6 @@ contract Casino {
       revert();
 
     players.push(msg.sender);
-    currentPlayers.push(msg.sender);
   }
 
   // Start the game. Only the owner can start the game
@@ -102,13 +118,15 @@ contract Casino {
     if (players.length < minPlayers || playing)
       revert();
 
+    uint numPlayers = players.length;
+    for (uint i = 0; i < numPlayers; i++)
+      currentPlayers.push(players[i]);
+
     playing = true;
     round = 0;
 
     shuffleCards();
-
-    smallBlind = (smallBlind + 1) % players.length; // increment small blind
-    currentPlayer = (smallBlind + 2) % players.length; // start with player after big blind
+    incrementCurrentPlayer();
   }
 
   // ROUNDS
@@ -125,20 +143,23 @@ contract Casino {
     deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
   }
 
-  function paySmallBlind() public payable
-  onlySmallBlind onlyRound(0) whenPlaying costs(smallBlindCost) {
+  function paySmallBlind() public payable onlyCurrentPlayer onlyRound(0)
+  whenPlaying whenNotDealt costs(smallBlindCost) {
     smallBlindPayed = true;
     setMaxBet(msg.value);
-    if(bigBlindPayed)
-      deal();
+    bets[msg.sender] = msg.value;
+
+    incrementCurrentPlayer();
   }
 
-  function payBigBlind() public payable
-  onlyBigBlind onlyRound(0) whenPlaying costs(bigBlindCost) {
+  function payBigBlind() public payable onlyCurrentPlayer onlyRound(0)
+  whenPlaying whenNotDealt costs(bigBlindCost) {
     bigBlindPayed = true;
     setMaxBet(msg.value);
-    if(smallBlindPayed)
-      deal();
+    bets[msg.sender] = msg.value;
+
+    incrementCurrentPlayer();
+    deal();
   }
 
   function setMaxBet(uint bet) private {
@@ -162,15 +183,6 @@ contract Casino {
       return card;
   }
 
-  function getHand() public view whenPlaying returns (uint, uint) {
-    return (hands[msg.sender].first, hands[msg.sender].second);
-  }
-
-  // Can be used to test shuffling but should be removed after that
-  function getDeck() public view whenPlaying returns (uint[52]) {
-    return deck;
-  }
-
   function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
     uint currentBet = bets[msg.sender];
     if(currentBet + msg.value < maxBet)
@@ -182,16 +194,17 @@ contract Casino {
     tryIncrementRound();
   }
 
+  // Has trouble being reduced
   function incrementCurrentPlayer() private {
-    currentPlayer = (currentPlayer + 1) % currentPlayers.length;
+    currentPlayer++;
   }
 
   function tryIncrementRound() private {
-    uint numPlayers = currentPlayers.length;
     uint previousBet = bets[currentPlayers[0]];
     bool mismatch = false;
 
-    for (uint i=1; i < numPlayers; i++) {
+    uint numCurrentPlayers = currentPlayers.length;
+    for (uint i=1; i < numCurrentPlayers; i++) {
       uint playerBet = bets[currentPlayers[i]];
       if (previousBet != playerBet) {
         mismatch = true;
@@ -216,13 +229,15 @@ contract Casino {
 
   function fold() public onlyCurrentPlayer onlyOnceBlindsPayed whenPlaying {
     uint i = 0;
-    for (i; i < currentPlayers.length; i++) {
+    uint numCurrentPlayers = currentPlayers.length;
+    for (i; i < numCurrentPlayers; i++) {
       if (currentPlayers[i] == msg.sender) {
-        for (uint j=i; j < currentPlayers.length-1; j++) {
+        for (uint j=i; j < numCurrentPlayers-1; j++) {
           currentPlayers[i] = currentPlayers[i+1];
         }
 
-        delete currentPlayers[currentPlayers.length-1];
+        delete currentPlayers[numCurrentPlayers-1];
+        numCurrentPlayers--;
         break;
       }
     }
