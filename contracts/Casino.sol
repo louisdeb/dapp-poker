@@ -31,6 +31,7 @@ contract Casino {
 
   mapping(address => Hand) private hands;
   mapping(address => uint) private bets;
+  uint[] private table;
 
   function Casino() public {
     owner = msg.sender;
@@ -83,6 +84,10 @@ contract Casino {
   // Can be used to test shuffling but should be removed after that
   function getDeck() public view whenPlaying returns (uint[52]) {
     return deck;
+  }
+
+  function getTableCards() public view whenPlaying returns (uint[]) {
+      return table;
   }
 
   function getMaxBet() public view whenPlaying returns (uint) {
@@ -200,9 +205,14 @@ contract Casino {
   }
 
   function tryIncrementRound() private {
+    // Make sure all players have had the chance to bet
+    if (getCurrentPlayer() != 0 ||
+        bets[currentPlayers[getCurrentPlayer()]] != maxBet)
+      return();
+
+    // Check all bets are equal
     uint previousBet = bets[currentPlayers[0]];
     bool mismatch = false;
-
     uint numCurrentPlayers = currentPlayers.length;
     for (uint i=1; i < numCurrentPlayers; i++) {
       uint playerBet = bets[currentPlayers[i]];
@@ -213,10 +223,26 @@ contract Casino {
       previousBet = playerBet;
     }
 
-    // has a problem when first player checks but another player wants to bet
-    if (!mismatch) {
-      round++;
-      // deal another card or whatever
+    // Some bet is unequal so don't finish the betting
+    if (mismatch)
+      return();
+
+    // Increment round
+    round++;
+    currentPlayer = 0;
+    if (round < 4) {
+      playTableCards();
+    } else {
+      checkWin();
+    }
+  }
+
+  function playTableCards() private whenPlaying {
+    if (round == 1) {
+      for (uint i = 0; i < 3; i++)
+        table.push(drawCard());
+    } else {
+      table.push(drawCard());
     }
   }
 
@@ -225,6 +251,7 @@ contract Casino {
       revert();
 
     incrementCurrentPlayer();
+    tryIncrementRound();
   }
 
   function fold() public onlyCurrentPlayer onlyOnceBlindsPayed whenPlaying {
@@ -240,17 +267,22 @@ contract Casino {
         numCurrentPlayers--;
         break;
       }
+    } // naturally increments the current player
+
+    if (currentPlayers.length == 1) {
+        checkWin();
+        return;
     }
 
-    checkWin();
+    tryIncrementRound();
   }
 
   function checkWin() private whenPlaying {
-      if (currentPlayers.length == 1) {
-          // win for the final player
-      }
+    if (currentPlayers.length == 1) {
+      // win for the final player
+    }
 
-      // otherwise reveal hands & determine winner
+    // otherwise reveal hands & determine winner
   }
 
 }
