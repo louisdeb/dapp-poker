@@ -21,8 +21,9 @@ contract Casino {
   // State variables
   bool private playing = false;
   uint private currentPlayer = 0; // Index of player currently betting
+  address private lastPlayerToRaise = 0;
   uint private maxBet = 0;
-  uint private round = 0;
+  uint public round = 0; // only public for debug
   uint[52] private deck;
   uint private deckLength = 52;
   bool private smallBlindPayed = false;
@@ -98,6 +99,10 @@ contract Casino {
       return bets[msg.sender];
   }
 
+  function getNumberOfPlayers() public view returns (uint) {
+      return currentPlayers.length;
+  }
+
   function getCurrentPlayers() public view whenPlaying returns (uint, address[]) {
       return (getCurrentPlayer(), currentPlayers);
   }
@@ -116,16 +121,13 @@ contract Casino {
       revert();
 
     players.push(msg.sender);
+    currentPlayers.push(msg.sender);
   }
 
   // Start the game. Only the owner can start the game
   function startGame() public onlyOwner {
     if (players.length < minPlayers || playing)
       revert();
-
-    uint numPlayers = players.length;
-    for (uint i = 0; i < numPlayers; i++)
-      currentPlayers.push(players[i]);
 
     playing = true;
     round = 0;
@@ -148,27 +150,36 @@ contract Casino {
     deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
   }
 
-  function paySmallBlind() public payable onlyCurrentPlayer onlyRound(0)
+  function paySmallBlind() public payable onlyRound(0)
   whenPlaying whenNotDealt costs(smallBlindCost) {
+    if (currentPlayers[getCurrentPlayer()] != msg.sender)
+      revert();
+
     smallBlindPayed = true;
-    setMaxBet(msg.value);
+    setMaxBet(msg.value, msg.sender);
     bets[msg.sender] = msg.value;
 
     incrementCurrentPlayer();
   }
 
-  function payBigBlind() public payable onlyCurrentPlayer onlyRound(0)
-  whenPlaying whenNotDealt costs(bigBlindCost) {
+  function payBigBlind() public payable onlyRound(0)
+  whenPlaying costs(bigBlindCost) {
+    if (currentPlayers[getCurrentPlayer()] != msg.sender || dealt)
+      revert();
+
     bigBlindPayed = true;
-    setMaxBet(msg.value);
+    setMaxBet(msg.value, msg.sender);
     bets[msg.sender] = msg.value;
 
     incrementCurrentPlayer();
     deal();
   }
 
-  function setMaxBet(uint bet) private {
-      maxBet = bet > maxBet ? bet : maxBet;
+  function setMaxBet(uint bet, address sender) private {
+    if (bet > maxBet) {
+        maxBet = bet;
+        lastPlayerToRaise = sender;
+    }
   }
 
   function deal() private onlyRound(0) onlyOnceBlindsPayed whenNotDealt {
@@ -179,22 +190,23 @@ contract Casino {
     }
     for(uint j=0; j < numPlayers; j++) {
       hands[players[j]].second = drawCard();
-     }
+    }
   }
 
   function drawCard() private returns (uint) {
-      uint card = deck[deckLength-1];
-      deckLength--;
-      return card;
+    uint card = deck[deckLength-1];
+    deckLength--;
+    return card;
   }
 
-  function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
-    uint currentBet = bets[msg.sender];
-    if(currentBet + msg.value < maxBet)
+  function makeBet() public payable whenPlaying whenDealt {
+    uint newBet = bets[msg.sender] + msg.value;
+    if(newBet < maxBet ||
+       currentPlayers[getCurrentPlayer()] != msg.sender)
       revert();
 
-    bets[msg.sender] = currentBet + msg.value;
-    setMaxBet(bets[msg.sender]);
+    bets[msg.sender] = newBet;
+    setMaxBet(bets[msg.sender], msg.sender);
     incrementCurrentPlayer();
     tryIncrementRound();
   }
@@ -206,34 +218,31 @@ contract Casino {
 
   function tryIncrementRound() private {
     // Make sure all players have had the chance to bet
-    if (getCurrentPlayer() != 0 ||
-        bets[currentPlayers[getCurrentPlayer()]] != maxBet)
-      return();
+    address currentPlayerAddress = currentPlayers[getCurrentPlayer()];
+    if (currentPlayerAddress == lastPlayerToRaise &&
+        bets[currentPlayerAddress] == maxBet) {
 
-    // Check all bets are equal
-    uint previousBet = bets[currentPlayers[0]];
-    bool mismatch = false;
-    uint numCurrentPlayers = currentPlayers.length;
-    for (uint i=1; i < numCurrentPlayers; i++) {
-      uint playerBet = bets[currentPlayers[i]];
-      if (previousBet != playerBet) {
-        mismatch = true;
-        break;
+      // Check all bets are equal
+      bool mismatch = false;
+      uint numCurrentPlayers = currentPlayers.length;
+      for (uint i=1; i < numCurrentPlayers; i++) {
+        if (bets[currentPlayers[i]] != maxBet) {
+          mismatch = true;
+          break;
+        }
       }
-      previousBet = playerBet;
-    }
 
-    // Some bet is unequal so don't finish the betting
-    if (mismatch)
-      return();
+      // If all bets are maxBet
+      if (!mismatch) {
+        // Increment round
+        round++;
 
-    // Increment round
-    round++;
-    currentPlayer = 0;
-    if (round < 4) {
-      playTableCards();
-    } else {
-      checkWin();
+        if (round < 4) {
+          playTableCards();
+        } else {
+          checkWin();
+        }
+      }
     }
   }
 
@@ -270,8 +279,8 @@ contract Casino {
     } // naturally increments the current player
 
     if (currentPlayers.length == 1) {
-        checkWin();
-        return;
+      checkWin();
+      return;
     }
 
     tryIncrementRound();
