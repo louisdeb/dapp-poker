@@ -1,5 +1,12 @@
 pragma solidity ^0.4.19;
 
+// ROUNDS
+  // 0: blinds, dealing, initial bets
+  // 1: flop dealt, another round of betting
+  // 2: turn card dealt, another round of betting
+  // 3: river card dealt, final round of betting
+  // 4: showdown: cards revealed & pot distributed ... blinds rotated
+
 contract Casino {
 
   struct Hand {
@@ -11,6 +18,11 @@ contract Casino {
   address public owner;
   address[] private players;
   address[] private currentPlayers;
+
+  // Solidity didn't like declaring 'winners' inside of 'checkWin' because it
+  // doesn't have a fixed size. It benefits the programmer to have 'winners'
+  // as a dynamic array so that we can pass 'payout' any number of winners.
+  address[] private winners;
 
   // Game parameters
   uint constant minPlayers = 2;
@@ -108,7 +120,7 @@ contract Casino {
   }
 
   // Due to trouble reducing currentPlayer, we use this function to find the
-  // correct index of currentPlayer.
+  // correct index of currentPlayer. Even setting currentPlayer to 0 caused issues.
   // currentPlayer shouldn't be read from directly. (Use this function)
   function getCurrentPlayer() private view returns (uint) {
       return currentPlayer % currentPlayers.length;
@@ -136,13 +148,6 @@ contract Casino {
     incrementCurrentPlayer();
   }
 
-  // ROUNDS
-  // 0: blinds, dealing, initial bets
-  // 1: flop dealt, another round of betting
-  // 2: turn card dealt, another round of betting
-  // 3: river card dealt, final round of betting
-  // 4: showdown: cards revealed & pot distributed ... blinds rotated
-
   // Load a deck of cards & shuffle it
   // NB: Shuffling not implemented due to infinite loop possibility
   function shuffleCards() private {
@@ -151,10 +156,7 @@ contract Casino {
   }
 
   function paySmallBlind() public payable onlyRound(0)
-  whenPlaying whenNotDealt costs(smallBlindCost) {
-    if (currentPlayers[getCurrentPlayer()] != msg.sender)
-      revert();
-
+  whenPlaying onlyCurrentPlayer whenNotDealt costs(smallBlindCost) {
     smallBlindPayed = true;
     setMaxBet(msg.value, msg.sender);
     bets[msg.sender] = msg.value;
@@ -163,10 +165,7 @@ contract Casino {
   }
 
   function payBigBlind() public payable onlyRound(0)
-  whenPlaying costs(bigBlindCost) {
-    if (currentPlayers[getCurrentPlayer()] != msg.sender || dealt)
-      revert();
-
+  whenPlaying onlyCurrentPlayer whenNotDealt costs(bigBlindCost) {
     bigBlindPayed = true;
     setMaxBet(msg.value, msg.sender);
     bets[msg.sender] = msg.value;
@@ -182,7 +181,8 @@ contract Casino {
     }
   }
 
-  function deal() private onlyRound(0) onlyOnceBlindsPayed whenNotDealt {
+  function deal() private onlyRound(0)
+  onlyOnceBlindsPayed whenPlaying whenNotDealt {
     dealt = true;
     uint numPlayers = players.length;
     for(uint i=0; i < numPlayers; i++) {
@@ -199,10 +199,9 @@ contract Casino {
     return card;
   }
 
-  function makeBet() public payable whenPlaying whenDealt {
+  function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
     uint newBet = bets[msg.sender] + msg.value;
-    if(newBet < maxBet ||
-       currentPlayers[getCurrentPlayer()] != msg.sender)
+    if(newBet < maxBet)
       revert();
 
     bets[msg.sender] = newBet;
@@ -211,7 +210,6 @@ contract Casino {
     tryIncrementRound();
   }
 
-  // Has trouble being reduced
   function incrementCurrentPlayer() private {
     currentPlayer++;
   }
@@ -237,6 +235,7 @@ contract Casino {
         // Increment round
         round++;
 
+        // Either play table cards or go to the showdown
         if (round < 4) {
           playTableCards();
         } else {
@@ -264,34 +263,55 @@ contract Casino {
   }
 
   function fold() public onlyCurrentPlayer onlyOnceBlindsPayed whenPlaying {
-    uint i = 0;
     uint numCurrentPlayers = currentPlayers.length;
-    for (i; i < numCurrentPlayers; i++) {
+    for (uint i=0; i < numCurrentPlayers; i++) {
       if (currentPlayers[i] == msg.sender) {
         for (uint j=i; j < numCurrentPlayers-1; j++) {
           currentPlayers[i] = currentPlayers[i+1];
         }
 
         delete currentPlayers[numCurrentPlayers-1];
-        numCurrentPlayers--;
         break;
       }
     } // naturally increments the current player
 
     if (currentPlayers.length == 1) {
       checkWin();
-      return;
+    } else {
+      tryIncrementRound();
     }
-
-    tryIncrementRound();
   }
 
-  function checkWin() private whenPlaying {
+  function checkWin() whenPlaying private {
+    playing = false;
+
+    // If 1 player remains, they win.
     if (currentPlayers.length == 1) {
-      // win for the final player
+      winners.push(currentPlayers[0]);
+      payout();
+    } else {
+      // revealHands();
+      determineWinners();
+      payout();
     }
 
-    // otherwise reveal hands & determine winner
+  }
+
+  function determineWinners() private {
+
+  }
+
+  function payout() private {
+    uint numWinners = winners.length;
+    uint prize = this.balance / numWinners;
+
+    for (uint i = 0; i < numWinners; i++) {
+      address winner = winners[i];
+      winner.transfer(prize);
+    }
+
+    if (this.balance > 0)
+      owner.transfer(this.balance);
   }
 
 }
