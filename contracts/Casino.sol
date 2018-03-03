@@ -464,7 +464,11 @@ contract Casino {
   }
 
   function hasFullHouse(uint first, uint second) private returns (uint) {
-
+    uint threeOfAKind = hasThreeOfAKind(first, second);
+    uint pair = hasPair(first, second);
+    if ((threeOfAKind != 0) && (pair != 0) && (threeOfAKind != pair))
+      return threeOfAKind*13 + pair; // logic ensuring QQQ99 beats 999QQ
+    return 0;
   }
 
   function hasFlush(uint first, uint second) private returns (uint) {
