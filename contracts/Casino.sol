@@ -417,8 +417,24 @@ contract Casino {
     return score;
   }
 
-  function hasRoyalFlush(uint first, uint second) private returns (bool) {
-
+  function hasRoyalFlush(uint first, uint second) private view returns (bool) {
+    return
+    // first suit
+    tableOrHandContains(8, first, second) && tableOrHandContains(9, first, second) &&
+    tableOrHandContains(10, first, second) && tableOrHandContains(11, first, second) &&
+    tableOrHandContains(12, first, second) ||
+    // second suit
+    tableOrHandContains(21, first, second) && tableOrHandContains(22, first, second) &&
+    tableOrHandContains(23, first, second) && tableOrHandContains(24, first, second) &&
+    tableOrHandContains(25, first, second) ||
+    // third suit
+    tableOrHandContains(34, first, second) && tableOrHandContains(35, first, second) &&
+    tableOrHandContains(36, first, second) && tableOrHandContains(37, first, second) &&
+    tableOrHandContains(38, first, second) ||
+    // fourth suit
+    tableOrHandContains(47, first, second) && tableOrHandContains(48, first, second) &&
+    tableOrHandContains(49, first, second) && tableOrHandContains(50, first, second) &&
+    tableOrHandContains(51, first, second);
   }
 
   function hasStraightFlush(uint first, uint second) private returns (uint) {
@@ -455,6 +471,24 @@ contract Casino {
 
   function highCardScore(uint first, uint second) private returns (uint) {
 
+  }
+
+  function tableOrHandContains(uint n, uint first, uint second)
+  private view returns (bool) {
+    return tableContains(n) || handContains(n, first, second);
+  }
+
+  function tableContains(uint n) private view returns (bool) {
+    for (uint i = 0; i < table.length; i++) {
+      if (table[i] == n)
+        return true;
+    }
+    return false;
+  }
+
+  function handContains(uint n, uint first, uint second)
+  private pure returns (bool) {
+    return n == first || n == second;
   }
 
 }
