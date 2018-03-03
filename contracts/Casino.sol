@@ -472,7 +472,30 @@ contract Casino {
   }
 
   function hasFlush(uint first, uint second) private returns (uint) {
+    uint n = 0; // Number of cards within suit
 
+    // For every suit
+    for (uint i = 0; i < 52; i += 13) {
+      n = 0;
+      if (first >= i && first <= i+12)
+        n++;
+      if (second >= i && second <= i+12)
+        n++;
+
+      uint numTableCards = table.length;
+      for (uint j = 0; j < numTableCards; j++) {
+        if (table[j] >= i && table[j] <= i+12) {
+          n++;
+          if (n == 5)
+            break;
+        }
+      }
+
+      if (n == 5)
+        break;
+    }
+
+    return (n == 5) ? 1 : 0; // High card will determine between two flushes
   }
 
   function hasStraight(uint first, uint second) private returns (uint) {
