@@ -525,11 +525,38 @@ contract Casino {
   }
 
   function hasTwoPair(uint first, uint second) private returns (uint) {
+    uint firstPair = hasPair(first, second);
+    if (firstPair-1 == 0)
+      return 0;
 
+    uint secondPair = 0;
+    for (uint i = 0; i < 13; i++) {
+      if (i == firstPair-1)
+        continue;
+
+      bool _first = tableOrHandContains(i, first, second);
+      bool _second = tableOrHandContains(i+13, first, second);
+      bool _third = tableOrHandContains(i+26, first, second);
+      bool _fourth = tableOrHandContains(i+39, first, second);
+      if (_first && _second || _first && _third || _first && _fourth ||
+          _second && _third || _second && _fourth || _third && _fourth)
+        secondPair = i+1;
+    }
+
+    return (secondPair != 0) ? secondPair*13 + firstPair : 0;
   }
 
   function hasPair(uint first, uint second) private returns (uint) {
-
+    for (uint i = 0; i < 13; i++) {
+      bool _first = tableOrHandContains(i, first, second);
+      bool _second = tableOrHandContains(i+13, first, second);
+      bool _third = tableOrHandContains(i+26, first, second);
+      bool _fourth = tableOrHandContains(i+39, first, second);
+      if (_first && _second || _first && _third || _first && _fourth ||
+          _second && _third || _second && _fourth || _third && _fourth)
+        return i+1;
+    }
+    return 0;
   }
 
   function highCardScore(uint first, uint second) private returns (uint) {
