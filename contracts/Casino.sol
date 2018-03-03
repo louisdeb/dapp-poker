@@ -452,8 +452,15 @@ contract Casino {
     return 0;
   }
 
-  function hasFourOfAKind(uint first, uint second) private returns (uint) {
-
+  function hasFourOfAKind(uint first, uint second) private view returns (uint) {
+    for (uint i = 0; i < 13; i++) {
+      if (tableOrHandContains(i, first, second) &&
+          tableOrHandContains(i+13, first, second) &&
+          tableOrHandContains(i+26, first, second) &&
+          tableOrHandContains(i+39, first, second))
+        return i;
+    }
+    return 0;
   }
 
   function hasFullHouse(uint first, uint second) private returns (uint) {
