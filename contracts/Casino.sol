@@ -32,19 +32,23 @@ contract Casino {
 
   // State variables
   bool private playing = false;
+
   uint private currentPlayer = 0; // Index of player currently betting
   address private lastPlayerToRaise = 0;
-  uint private maxBet = 0;
+
   uint public round = 0; // only public for debug
-  uint[52] private deck;
-  uint private deckLength = 52;
+  uint private maxBet = 0;
   bool private smallBlindPayed = false;
   bool private bigBlindPayed = false;
+
+  uint[52] private deck;
+  uint private deckLength = 52;
   bool private dealt = false;
 
+  mapping(address => bool) private inGame; // Whether the player has folded or not
   mapping(address => Hand) private hands;
   mapping(address => uint) private bets;
-  uint[] private table;
+  uint[] private table; // Cards placed on the table
 
   function Casino() public {
     owner = msg.sender;
@@ -60,14 +64,19 @@ contract Casino {
     _;
   }
 
+  modifier whenNotPlaying() {
+    require(!playing);
+    _;
+  }
+
   modifier whenNotDealt() {
       require(!dealt);
       _;
   }
 
   modifier whenDealt() {
-      require(dealt);
-      _;
+    require(dealt);
+    _;
   }
 
   modifier onlyOnceBlindsPayed() {
@@ -76,8 +85,8 @@ contract Casino {
   }
 
   modifier onlyCurrentPlayer() {
-      require(msg.sender == currentPlayers[getCurrentPlayer()]);
-      _;
+    require(msg.sender == currentPlayers[getCurrentPlayer()]);
+    _;
   }
 
   modifier onlyRound(uint n) {
@@ -100,40 +109,67 @@ contract Casino {
   }
 
   function getTableCards() public view whenPlaying returns (uint[]) {
-      return table;
+    return table;
   }
 
   function getMaxBet() public view whenPlaying returns (uint) {
-      return maxBet;
+    return maxBet;
   }
 
   function getMyBet() public view whenPlaying returns (uint) {
-      return bets[msg.sender];
+    return bets[msg.sender];
   }
 
   function getNumberOfPlayers() public view returns (uint) {
-      return currentPlayers.length;
+    return players.length;
   }
 
   function getCurrentPlayers() public view whenPlaying returns (uint, address[]) {
-      return (getCurrentPlayer(), currentPlayers);
+    return (getCurrentPlayer(), getNotFolded());
+  }
+
+  function getNotFolded() private view whenPlaying returns (address[]) {
+    uint numCurrent = getNumberOfCurrentPlayers();
+    address[] memory notFolded = new address[](numCurrent);
+
+    uint n = 0; // tracks current index of notFolded array
+    uint totalNum = currentPlayers.length;
+    for (uint i = 0; i < totalNum; i++) {
+      if (inGame[currentPlayers[i]]) {
+        notFolded[n] = currentPlayers[i];
+        n++;
+      }
+    }
+
+    return notFolded;
   }
 
   // Due to trouble reducing currentPlayer, we use this function to find the
   // correct index of currentPlayer. Even setting currentPlayer to 0 caused issues.
   // currentPlayer shouldn't be read from directly. (Use this function)
   function getCurrentPlayer() private view returns (uint) {
-      return currentPlayer % currentPlayers.length;
+    return currentPlayer % currentPlayers.length;
+  }
+
+  // Returns the count of number of players who haven't folded
+  function getNumberOfCurrentPlayers() private view returns (uint) {
+    uint num = 0;
+    for (uint i = 0; i < currentPlayers.length; i++) {
+      if (inGame[currentPlayers[i]])
+        num++;
+    }
+    return num;
   }
 
   // Allows a player to request to join the game
   // Could add a cost, paid to the owner
-  function joinGame() public {
-    if (players.length > maxPlayers || playing)
+  function joinGame() public whenNotPlaying {
+    if (players.length > maxPlayers || inGame[msg.sender])
       revert();
 
     players.push(msg.sender);
     currentPlayers.push(msg.sender);
+    inGame[msg.sender] = true;
   }
 
   // Start the game. Only the owner can start the game
@@ -212,6 +248,8 @@ contract Casino {
 
   function incrementCurrentPlayer() private {
     currentPlayer++;
+    if (!inGame[currentPlayers[getCurrentPlayer()]])
+      incrementCurrentPlayer();
   }
 
   function tryIncrementRound() private {
@@ -222,9 +260,14 @@ contract Casino {
 
       // Check all bets are equal
       bool mismatch = false;
-      uint numCurrentPlayers = currentPlayers.length;
-      for (uint i=1; i < numCurrentPlayers; i++) {
-        if (bets[currentPlayers[i]] != maxBet) {
+      for (uint i=1; i < currentPlayers.length; i++) {
+        address playerAddress = currentPlayers[i];
+
+        // Don't bother if the player has folded
+        if (!inGame[playerAddress])
+          continue;
+
+        if (bets[playerAddress] != maxBet) {
           mismatch = true;
           break;
         }
@@ -262,20 +305,11 @@ contract Casino {
     tryIncrementRound();
   }
 
-  function fold() public onlyCurrentPlayer onlyOnceBlindsPayed whenPlaying {
-    uint numCurrentPlayers = currentPlayers.length;
-    for (uint i=0; i < numCurrentPlayers; i++) {
-      if (currentPlayers[i] == msg.sender) {
-        for (uint j=i; j < numCurrentPlayers-1; j++) {
-          currentPlayers[i] = currentPlayers[i+1];
-        }
+  function fold() public onlyCurrentPlayer whenDealt whenPlaying {
+    inGame[msg.sender] = false;
+    incrementCurrentPlayer();
 
-        delete currentPlayers[numCurrentPlayers-1];
-        break;
-      }
-    } // naturally increments the current player
-
-    if (currentPlayers.length == 1) {
+    if (getNumberOfCurrentPlayers() == 1) {
       checkWin();
     } else {
       tryIncrementRound();
@@ -283,18 +317,18 @@ contract Casino {
   }
 
   function checkWin() whenPlaying private {
-    playing = false;
-
     // If 1 player remains, they win.
-    if (currentPlayers.length == 1) {
-      winners.push(currentPlayers[0]);
+    if (getNumberOfCurrentPlayers() == 1) {
+      // get address of remaining players
+      address winner = getNotFolded()[0];
+      winners.push(winner);
       payout();
     } else {
       // revealHands();
       determineWinners();
       payout();
     }
-
+    playing = false;
   }
 
   function determineWinners() private {
