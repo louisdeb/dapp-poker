@@ -386,7 +386,7 @@ contract Casino {
   }
 
   // Get score for a player
-  function determineScore(address player) private returns (uint) {
+  function determineScore(address player) private view returns (uint) {
     uint score = 0;
     Hand memory hand = hands[player];
     uint firstCard = hand.first;
@@ -463,7 +463,7 @@ contract Casino {
     return 0;
   }
 
-  function hasFullHouse(uint first, uint second) private returns (uint) {
+  function hasFullHouse(uint first, uint second) private view returns (uint) {
     uint threeOfAKind = hasThreeOfAKind(first, second);
     uint pair = hasPair(first, second);
     if ((threeOfAKind != 0) && (pair != 0) && (threeOfAKind != pair))
@@ -471,7 +471,7 @@ contract Casino {
     return 0;
   }
 
-  function hasFlush(uint first, uint second) private returns (uint) {
+  function hasFlush(uint first, uint second) private view returns (uint) {
     uint n = 0; // Number of cards within suit
 
     // For every suit
@@ -524,7 +524,7 @@ contract Casino {
     return 0;
   }
 
-  function hasTwoPair(uint first, uint second) private returns (uint) {
+  function hasTwoPair(uint first, uint second) private view returns (uint) {
     uint firstPair = hasPair(first, second);
     if (firstPair-1 == 0)
       return 0;
@@ -546,7 +546,7 @@ contract Casino {
     return (secondPair != 0) ? secondPair*13 + firstPair : 0;
   }
 
-  function hasPair(uint first, uint second) private returns (uint) {
+  function hasPair(uint first, uint second) private view returns (uint) {
     for (uint i = 0; i < 13; i++) {
       bool _first = tableOrHandContains(i, first, second);
       bool _second = tableOrHandContains(i+13, first, second);
@@ -559,8 +559,8 @@ contract Casino {
     return 0;
   }
 
-  function highCardScore(uint first, uint second) private returns (uint) {
-
+  function highCardScore(uint first, uint second) private pure returns (uint) {
+    return (first > second) ? first : second;
   }
 
   function tableOrHandContains(uint n, uint first, uint second)
