@@ -458,7 +458,7 @@ contract Casino {
           tableOrHandContains(i+13, first, second) &&
           tableOrHandContains(i+26, first, second) &&
           tableOrHandContains(i+39, first, second))
-        return i;
+        return i+1;
     }
     return 0;
   }
@@ -510,8 +510,18 @@ contract Casino {
     return 0;
   }
 
-  function hasThreeOfAKind(uint first, uint second) private returns (uint) {
-
+  function hasThreeOfAKind(uint first, uint second) private view returns (uint) {
+    for (uint i = 0; i < 13; i++) {
+      bool _first = tableOrHandContains(i, first, second);
+      bool _second = tableOrHandContains(i+13, first, second);
+      bool _third = tableOrHandContains(i+26, first, second);
+      bool _fourth = tableOrHandContains(i+39, first, second);
+      if (_first  && _second && _third  ||
+          _first  && _second && _fourth ||
+          _second && _third && _fourth)
+        return i+1;
+    }
+    return 0;
   }
 
   function hasTwoPair(uint first, uint second) private returns (uint) {
