@@ -331,10 +331,6 @@ contract Casino {
     playing = false;
   }
 
-  function determineWinners() private {
-
-  }
-
   function payout() private {
     uint numWinners = winners.length;
     uint prize = this.balance / numWinners;
@@ -346,6 +342,119 @@ contract Casino {
 
     if (this.balance > 0)
       owner.transfer(this.balance);
+  }
+
+  // Poker winning logic
+
+  // Get score for each winner and work out who deserves the pot
+  function determineWinners() private {
+    address[] memory _currentPlayers = getNotFolded();
+    uint n = _currentPlayers.length;
+    uint[] memory scores = new uint[](n);
+
+    for (uint i = 0; i < n; i++)
+      scores[i] = determineScore(_currentPlayers[i]);
+
+    address winner;
+    uint maxScore = scores[0];
+
+    for (uint j = 1; j < n; j++) {
+      if (scores[j] > maxScore) {
+        winner = _currentPlayers[j];
+        maxScore = scores[j];
+      }
+    }
+
+    bool drawCondition = false;
+
+    for (uint k = 0; k < n; k++) {
+      if (scores[k] == maxScore && winner != _currentPlayers[k]) {
+        drawCondition = true;
+        break;
+      }
+    }
+
+    if (drawCondition) {
+      uint m = 0; // track _winners index
+      for (uint l = 0; l < n; l++) { // find and add multiple winners
+        if (scores[l] == maxScore)
+          winners[m] = _currentPlayers[l];
+      }
+    } else {
+      winners[0] = winner;
+    }
+  }
+
+  // Get score for a player
+  function determineScore(address player) private returns (uint) {
+    uint score = 0;
+    Hand memory hand = hands[player];
+    uint firstCard = hand.first;
+    uint secondCard = hand.second;
+
+    if (hasRoyalFlush(firstCard, secondCard)) {
+
+    } else if (hasStraightFlush(firstCard, secondCard) != 0) {
+
+    } else if (hasFourOfAKind(firstCard, secondCard) != 0) {
+
+    } else if (hasFullHouse(firstCard, secondCard) != 0) {
+
+    } else if (hasFlush(firstCard, secondCard) != 0) {
+
+    } else if (hasStraight(firstCard, secondCard) != 0) {
+
+    } else if (hasThreeOfAKind(firstCard, secondCard) != 0) {
+
+    } else if (hasTwoPair(firstCard, secondCard) != 0) {
+
+    } else if (hasPair(firstCard, secondCard) != 0) {
+
+    }
+
+    score = score + highCardScore(firstCard, secondCard);
+
+    return score;
+  }
+
+  function hasRoyalFlush(uint first, uint second) private returns (bool) {
+
+  }
+
+  function hasStraightFlush(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasFourOfAKind(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasFullHouse(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasFlush(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasStraight(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasThreeOfAKind(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasTwoPair(uint first, uint second) private returns (uint) {
+
+  }
+
+  function hasPair(uint first, uint second) private returns (uint) {
+
+  }
+
+  function highCardScore(uint first, uint second) private returns (uint) {
+
   }
 
 }
