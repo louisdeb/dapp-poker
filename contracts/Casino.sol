@@ -62,8 +62,11 @@ contract Casino {
   uint constant private SCORE_TWO_PAIRS = 2000;
   uint constant private SCORE_PAIR = 1000;
 
+  mapping(uint => string) private cardNames; // Maps deck indexes to card name
+
   function Casino() public {
     owner = msg.sender;
+    populateCardNames();
   }
 
   /* --- Modifiers --- */
@@ -113,8 +116,10 @@ contract Casino {
   }
 
   /* --- Getters, public & utility --- */
-  function getHand() public view whenPlaying returns (uint, uint) {
-    return (hands[msg.sender].first, hands[msg.sender].second);
+  function getHand() public view whenPlaying returns (string, string) {
+    uint _first = hands[msg.sender].first;
+    uint _second = hands[msg.sender].second;
+    return (cardNames[_first], cardNames[_second]);
   }
 
   // Can be used to test shuffling but should be removed after that (debug)
@@ -122,8 +127,12 @@ contract Casino {
     return deck;
   }
 
-  function getTableCards() public view whenPlaying returns (uint[]) {
-    return table;
+  function getTableCards() public view whenPlaying returns (string[]) {
+    uint numCards = table.length;
+    string[] memory cards = new string[](numCards);
+    for (uint i = 0; i < numCards; i++)
+      cards[i] = cardNames[table[i]];
+    return cards;
   }
 
   function getMaxBet() public view whenPlaying returns (uint) {
@@ -318,7 +327,7 @@ contract Casino {
 
       // Check all bets are equal
       bool mismatch = false;
-      for (uint i=1; i < currentPlayers.length; i++) {
+      for (uint i = 1; i < currentPlayers.length; i++) {
         address playerAddress = currentPlayers[i];
 
         // Don't bother if the player has folded
@@ -667,6 +676,64 @@ contract Casino {
         return true;
     }
     return false;
+  }
+
+  function populateCardNames() private {
+    cardNames[0] = "2C";
+    cardNames[1] = "3C";
+    cardNames[2] = "4C";
+    cardNames[3] = "5C";
+    cardNames[4] = "6C";
+    cardNames[5] = "7C";
+    cardNames[6] = "8C";
+    cardNames[7] = "9C";
+    cardNames[8] = "10C";
+    cardNames[9] = "JC";
+    cardNames[10] = "QC";
+    cardNames[11] = "KC";
+    cardNames[12] = "AC";
+
+    cardNames[13] = "2S";
+    cardNames[14] = "3S";
+    cardNames[15] = "4S";
+    cardNames[16] = "5S";
+    cardNames[17] = "6S";
+    cardNames[18] = "7S";
+    cardNames[19] = "8S";
+    cardNames[20] = "9S";
+    cardNames[21] = "10S";
+    cardNames[22] = "JS";
+    cardNames[23] = "QS";
+    cardNames[24] = "KS";
+    cardNames[25] = "AS";
+
+    cardNames[26] = "2H";
+    cardNames[27] = "3H";
+    cardNames[28] = "4H";
+    cardNames[29] = "5H";
+    cardNames[30] = "6H";
+    cardNames[31] = "7H";
+    cardNames[32] = "8H";
+    cardNames[33] = "9H";
+    cardNames[34] = "10H";
+    cardNames[35] = "JH";
+    cardNames[36] = "QH";
+    cardNames[37] = "KH";
+    cardNames[38] = "AH";
+
+    cardNames[39] = "2D";
+    cardNames[40] = "3D";
+    cardNames[41] = "4D";
+    cardNames[42] = "5D";
+    cardNames[43] = "6D";
+    cardNames[44] = "7D";
+    cardNames[45] = "8D";
+    cardNames[46] = "9D";
+    cardNames[47] = "10D";
+    cardNames[48] = "JD";
+    cardNames[49] = "QD";
+    cardNames[50] = "KD";
+    cardNames[51] = "AD";
   }
 
 }
