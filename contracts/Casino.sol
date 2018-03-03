@@ -420,7 +420,7 @@ contract Casino {
   function hasRoyalFlush(uint first, uint second) private view returns (bool) {
     return
     // first suit
-    tableOrHandContains(8, first, second) && tableOrHandContains(9, first, second) &&
+    tableOrHandContains(8, first, second)  && tableOrHandContains(9, first, second)  &&
     tableOrHandContains(10, first, second) && tableOrHandContains(11, first, second) &&
     tableOrHandContains(12, first, second) ||
     // second suit
@@ -437,8 +437,19 @@ contract Casino {
     tableOrHandContains(51, first, second);
   }
 
-  function hasStraightFlush(uint first, uint second) private returns (uint) {
-
+  function hasStraightFlush(uint first, uint second) private view returns (uint) {
+    for (uint j = 0; j < 51; j += 13) {
+      // This inner loop could be optimised...
+      for (uint i = j; i < j+7; i++) {
+        if (tableOrHandContains(i, first, second)   &&
+            tableOrHandContains(i+1, first, second) &&
+            tableOrHandContains(i+2, first, second) &&
+            tableOrHandContains(i+3, first, second) &&
+            tableOrHandContains(i+4, first, second))
+          return i+4;
+      }
+    }
+    return 0;
   }
 
   function hasFourOfAKind(uint first, uint second) private returns (uint) {
