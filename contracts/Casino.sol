@@ -498,8 +498,16 @@ contract Casino {
     return (n == 5) ? 1 : 0; // High card will determine between two flushes
   }
 
-  function hasStraight(uint first, uint second) private returns (uint) {
-
+  function hasStraight(uint first, uint second) private view returns (uint) {
+    for (uint i = 0; i < 7; i++) {
+      if (tableOrHandContainsMod(i, first, second)   &&
+          tableOrHandContainsMod(i+1, first, second) &&
+          tableOrHandContainsMod(i+2, first, second) &&
+          tableOrHandContainsMod(i+3, first, second) &&
+          tableOrHandContainsMod(i+4, first, second))
+        return i+4;
+    }
+    return 0;
   }
 
   function hasThreeOfAKind(uint first, uint second) private returns (uint) {
@@ -534,6 +542,19 @@ contract Casino {
   function handContains(uint n, uint first, uint second)
   private pure returns (bool) {
     return n == first || n == second;
+  }
+
+  function tableOrHandContainsMod(uint n, uint first, uint second)
+  private view returns (bool) {
+    return tableContainsMod(n) || handContains(n, first%13, second%13);
+  }
+
+  function tableContainsMod(uint n) private view returns (bool) {
+    for (uint i = 0; i < table.length; i++) {
+      if (table[i]%13 == n)
+        return true;
+    }
+    return false;
   }
 
 }
