@@ -1,11 +1,12 @@
 pragma solidity ^0.4.19;
 
-// ROUNDS
-  // 0: blinds, dealing, initial bets
-  // 1: flop dealt, another round of betting
-  // 2: turn card dealt, another round of betting
-  // 3: river card dealt, final round of betting
-  // 4: showdown: cards revealed & pot distributed ... blinds rotated
+/* --- Rounds ---
+  0: blinds, dealing, initial bets
+  1: flop dealt, another round of betting
+  2: turn card dealt, another round of betting
+  3: river card dealt, final round of betting
+  4: showdown: cards revealed & pot distributed
+*/
 
 contract Casino {
 
@@ -14,7 +15,7 @@ contract Casino {
       uint second;
   }
 
-  // Player information
+  /* --- Player information --- */
   address public owner;
   address[] private players;
   address[] private currentPlayers;
@@ -24,13 +25,13 @@ contract Casino {
   // as a dynamic array so that we can pass 'payout' any number of winners.
   address[] private winners;
 
-  // Game parameters
+  /* --- Game parameters --- */
   uint constant minPlayers = 2;
   uint constant maxPlayers = 6;
   uint constant smallBlindCost = 1 finney;
   uint constant bigBlindCost = 2 finney;
 
-  // State variables
+  /* --- State variables --- */
   bool private playing = false;
 
   uint private currentPlayer = 0; // Index of player currently betting
@@ -50,10 +51,22 @@ contract Casino {
   mapping(address => uint) private bets;
   uint[] private table; // Cards placed on the table
 
+  /* --- Scoring values --- */
+  uint constant private SCORE_ROYAL_FLUSH = 9000;
+  uint constant private SCORE_STRAIGHT_FLUSH = 8000;
+  uint constant private SCORE_FOUR_OF_A_KIND = 7000;
+  uint constant private SCORE_FULL_HOUSE = 6000;
+  uint constant private SCORE_FLUSH = 5000;
+  uint constant private SCORE_STRAIGHT = 4000;
+  uint constant private SCORE_THREE_OF_A_KIND = 3000;
+  uint constant private SCORE_TWO_PAIRS = 2000;
+  uint constant private SCORE_PAIR = 1000;
+
   function Casino() public {
     owner = msg.sender;
   }
 
+  /* --- Modifiers --- */
   modifier onlyOwner() {
     require(msg.sender == owner);
     _;
@@ -99,11 +112,12 @@ contract Casino {
     _;
   }
 
+  /* --- Getters, public & utility --- */
   function getHand() public view whenPlaying returns (uint, uint) {
     return (hands[msg.sender].first, hands[msg.sender].second);
   }
 
-  // Can be used to test shuffling but should be removed after that
+  // Can be used to test shuffling but should be removed after that (debug)
   function getDeck() public view whenPlaying returns (uint[52]) {
     return deck;
   }
@@ -161,8 +175,11 @@ contract Casino {
     return num;
   }
 
-  // Allows a player to request to join the game
-  // Could add a cost, paid to the owner
+  /* --- Transactions --- */
+
+  // Allows a player to request to join the game.
+  // If the game is full, the player is already a member of the game, or the
+  // game is in progress, the call will be rejected.
   function joinGame() public whenNotPlaying {
     if (players.length > maxPlayers || inGame[msg.sender])
       revert();
@@ -172,9 +189,9 @@ contract Casino {
     inGame[msg.sender] = true;
   }
 
-  // Start the game. Only the owner can start the game
-  function startGame() public onlyOwner {
-    if (players.length < minPlayers || playing)
+  // Start the game. Only the owner can start the game.
+  function startGame() public whenNotPlaying onlyOwner {
+    if (players.length < minPlayers)
       revert();
 
     playing = true;
@@ -184,13 +201,7 @@ contract Casino {
     incrementCurrentPlayer();
   }
 
-  // Load a deck of cards & shuffle it
-  // NB: Shuffling not implemented due to infinite loop possibility
-  function shuffleCards() private {
-    // Great shuffling
-    deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
-  }
-
+  // Called by the first player after the dealer to pay in the small blind.
   function paySmallBlind() public payable onlyRound(0)
   whenPlaying onlyCurrentPlayer whenNotDealt costs(smallBlindCost) {
     smallBlindPayed = true;
@@ -200,6 +211,10 @@ contract Casino {
     incrementCurrentPlayer();
   }
 
+  // Called by the second player after the dealer to pay in the big blind.
+  // Can only be called once the small blind is paid. Paying the big blind
+  // results in dealing the hands. Then the first round of betting starts with
+  // the player after the big blind.
   function payBigBlind() public payable onlyRound(0)
   whenPlaying onlyCurrentPlayer whenNotDealt costs(bigBlindCost) {
     bigBlindPayed = true;
@@ -210,6 +225,48 @@ contract Casino {
     deal();
   }
 
+  // Allows the current player to make a bet. If his bet does not match or
+  // raise the current max bet, the call will be rejected and he has to play
+  // again. If the bet succeedes, the play is passed to the next player and
+  // the round may be incremented.
+  function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
+    uint newBet = bets[msg.sender] + msg.value;
+    if(newBet < maxBet)
+      revert();
+
+    bets[msg.sender] = newBet;
+    setMaxBet(bets[msg.sender], msg.sender);
+    incrementCurrentPlayer();
+    tryIncrementRound();
+  }
+
+  // If the player already matches the max bet, they can check and pass play
+  // to the next player.
+  function check() public onlyCurrentPlayer whenPlaying {
+    if (bets[msg.sender] != maxBet)
+      revert();
+
+    incrementCurrentPlayer();
+    tryIncrementRound();
+  }
+
+  // If the player wants to forfeit their stake, they can fold, removing them
+  // from the game.
+  function fold() public onlyCurrentPlayer whenDealt whenPlaying {
+    inGame[msg.sender] = false;
+    incrementCurrentPlayer();
+
+    if (getNumberOfCurrentPlayers() == 1) {
+      checkWin();
+    } else {
+      tryIncrementRound();
+    }
+  }
+
+  /* --- Private Utility Functions --- */
+
+  // If the passed bet is greater than the max bet, raise the max bet and
+  // set the last player to raise.
   function setMaxBet(uint bet, address sender) private {
     if (bet > maxBet) {
         maxBet = bet;
@@ -217,6 +274,14 @@ contract Casino {
     }
   }
 
+  // Load a deck of cards & shuffle it
+  // NB: Shuffling not implemented due to infinite loop possibility
+  function shuffleCards() private {
+    // Great shuffling
+    deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
+  }
+
+  // Pass a card to each player in turn, and then another card.
   function deal() private onlyRound(0)
   onlyOnceBlindsPayed whenPlaying whenNotDealt {
     dealt = true;
@@ -229,29 +294,22 @@ contract Casino {
     }
   }
 
+  // Draw a card from the top of the deck and return it.
   function drawCard() private returns (uint) {
     uint card = deck[deckLength-1];
     deckLength--;
     return card;
   }
 
-  function makeBet() public payable onlyCurrentPlayer whenPlaying whenDealt {
-    uint newBet = bets[msg.sender] + msg.value;
-    if(newBet < maxBet)
-      revert();
-
-    bets[msg.sender] = newBet;
-    setMaxBet(bets[msg.sender], msg.sender);
-    incrementCurrentPlayer();
-    tryIncrementRound();
-  }
-
+  // Increment current player counter to the next non-folded player.
   function incrementCurrentPlayer() private {
     currentPlayer++;
     if (!inGame[currentPlayers[getCurrentPlayer()]])
       incrementCurrentPlayer();
   }
 
+  // Increment the round if all players have had the chance to raise or have
+  // called the max bet.
   function tryIncrementRound() private {
     // Make sure all players have had the chance to bet
     address currentPlayerAddress = currentPlayers[getCurrentPlayer()];
@@ -288,6 +346,8 @@ contract Casino {
     }
   }
 
+  // Draw cards from the deck and place them on the table (to represent the
+  // flop etc.).
   function playTableCards() private whenPlaying {
     if (round == 1) {
       for (uint i = 0; i < 3; i++)
@@ -297,29 +357,11 @@ contract Casino {
     }
   }
 
-  function check() public onlyCurrentPlayer whenPlaying {
-    if (bets[msg.sender] != maxBet)
-      revert();
-
-    incrementCurrentPlayer();
-    tryIncrementRound();
-  }
-
-  function fold() public onlyCurrentPlayer whenDealt whenPlaying {
-    inGame[msg.sender] = false;
-    incrementCurrentPlayer();
-
-    if (getNumberOfCurrentPlayers() == 1) {
-      checkWin();
-    } else {
-      tryIncrementRound();
-    }
-  }
-
+  // End game logic to check for winners and to pay them.
   function checkWin() whenPlaying private {
     // If 1 player remains, they win.
     if (getNumberOfCurrentPlayers() == 1) {
-      // get address of remaining players
+      // Get address of remaining players
       address winner = getNotFolded()[0];
       winners.push(winner);
       payout();
@@ -331,6 +373,7 @@ contract Casino {
     playing = false;
   }
 
+  // Pay winners their share of the pot.
   function payout() private {
     uint numWinners = winners.length;
     uint prize = this.balance / numWinners;
@@ -344,7 +387,7 @@ contract Casino {
       owner.transfer(this.balance);
   }
 
-  // Poker winning logic
+  /* --- Poker Winning Logic --- */
 
   // Get score for each winner and work out who deserves the pot
   function determineWinners() private {
@@ -375,17 +418,19 @@ contract Casino {
     }
 
     if (drawCondition) {
-      uint m = 0; // track _winners index
-      for (uint l = 0; l < n; l++) { // find and add multiple winners
-        if (scores[l] == maxScore)
+      uint m = 0; // Track winners index
+      for (uint l = 0; l < n; l++) { // Find and add multiple winners
+        if (scores[l] == maxScore) {
           winners[m] = _currentPlayers[l];
+          m++;
+        }
       }
     } else {
-      winners[0] = winner;
+      winners[0] = winner; // Take the player with the max score.
     }
   }
 
-  // Get score for a player
+  // Get score for a player (which represents how valuable their hand is).
   function determineScore(address player) private view returns (uint) {
     uint score = 0;
     Hand memory hand = hands[player];
@@ -393,25 +438,55 @@ contract Casino {
     uint secondCard = hand.second;
 
     if (hasRoyalFlush(firstCard, secondCard)) {
-
-    } else if (hasStraightFlush(firstCard, secondCard) != 0) {
-
-    } else if (hasFourOfAKind(firstCard, secondCard) != 0) {
-
-    } else if (hasFullHouse(firstCard, secondCard) != 0) {
-
-    } else if (hasFlush(firstCard, secondCard) != 0) {
-
-    } else if (hasStraight(firstCard, secondCard) != 0) {
-
-    } else if (hasThreeOfAKind(firstCard, secondCard) != 0) {
-
-    } else if (hasTwoPair(firstCard, secondCard) != 0) {
-
-    } else if (hasPair(firstCard, secondCard) != 0) {
-
+      score = SCORE_ROYAL_FLUSH;
+    } else {
+      score = hasStraightFlush(firstCard, secondCard);
+      if (score != 0) {
+        score = SCORE_STRAIGHT_FLUSH + score;
+      } else {
+        score = hasFourOfAKind(firstCard, secondCard);
+        if (score != 0) {
+          score = SCORE_FOUR_OF_A_KIND + score;
+        } else {
+          score = hasFullHouse(firstCard, secondCard);
+          if (score != 0) {
+            score = SCORE_FULL_HOUSE + score;
+          } else {
+            score = hasFlush(firstCard, secondCard);
+            if (score != 0) {
+              score = SCORE_FLUSH + score;
+            } else {
+              score = hasStraight(firstCard, secondCard);
+              if (score != 0) {
+                score = SCORE_STRAIGHT + score;
+              } else {
+                score = hasThreeOfAKind(firstCard, secondCard);
+                if (score != 0) {
+                  score = SCORE_THREE_OF_A_KIND + score;
+                } else {
+                  score = hasTwoPair(firstCard, secondCard);
+                  if (score != 0) {
+                    score = SCORE_TWO_PAIRS + score;
+                  } else {
+                    score = hasPair(firstCard, secondCard);
+                    if (score != 0) {
+                      score = SCORE_PAIR + score;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
+    // That if-else was nasty, but has the optimisation that each check function,
+    // e.g. hasPair, does not have to be called twice. We'd like to have
+    // } else if (uint x = hasPair(...) != 0) {
+    // but it is not possible.
 
+    // Add on the high card value to their score, in case two scores are equal
+    // and the winner is determined by the high card.
     score = score + highCardScore(firstCard, secondCard);
 
     return score;
