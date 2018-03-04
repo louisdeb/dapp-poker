@@ -11,8 +11,8 @@ pragma solidity ^0.4.19;
 contract Casino {
 
   struct Hand {
-      uint first;
-      uint second;
+    uint first;
+    uint second;
   }
 
   /* --- Player information --- */
@@ -62,11 +62,16 @@ contract Casino {
   uint constant private SCORE_TWO_PAIRS = 2000;
   uint constant private SCORE_PAIR = 1000;
 
-  mapping(uint => string) private cardNames; // Maps deck indexes to card name
+  /* mapping(uint => string) private cardNames; // Maps deck indexes to card name */
+
+  // A couple of global variables used to reduce stack size when determining
+  // the winner
+  uint private firstCard;
+  uint private secondCard;
 
   function Casino() public {
     owner = msg.sender;
-    populateCardNames();
+    // populateCardNames();
   }
 
   /* --- Modifiers --- */
@@ -116,10 +121,11 @@ contract Casino {
   }
 
   /* --- Getters, public & utility --- */
-  function getHand() public view whenPlaying returns (string, string) {
+  function getHand() public view whenPlaying returns (uint, uint) {
     uint _first = hands[msg.sender].first;
     uint _second = hands[msg.sender].second;
-    return (cardNames[_first], cardNames[_second]);
+    return (_first, _second);
+    /* return (cardNames[_first], cardNames[_second]); */
   }
 
   // Can be used to test shuffling but should be removed after that (debug)
@@ -127,12 +133,13 @@ contract Casino {
     return deck;
   }
 
-  function getTableCards() public view whenPlaying returns (string[]) {
-    uint numCards = table.length;
+  function getTableCards() public view whenPlaying returns (uint[]) {
+    return table;
+    /* uint numCards = table.length;
     string[] memory cards = new string[](numCards);
     for (uint i = 0; i < numCards; i++)
       cards[i] = cardNames[table[i]];
-    return cards;
+    return cards; */
   }
 
   function getMaxBet() public view whenPlaying returns (uint) {
@@ -284,10 +291,18 @@ contract Casino {
   }
 
   // Load a deck of cards & shuffle it
-  // NB: Shuffling not implemented due to infinite loop possibility
   function shuffleCards() private {
-    // Great shuffling
-    deck = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51];
+    for (uint i = 0; i < deckLength; i++)
+      deck[i] = i;
+
+    // uint _deckLength = deckLength;
+    // for (uint j = 0; j < _deckLength; j++) {
+    //   uint randomNumber = uint(block.blockhash(block.number-1)) % deckLength;
+    //   uint a = deck[j];
+    //   uint b = deck[randomNumber];
+    //   deck[j] = b;
+    //   deck[randomNumber] = a;
+    // }
   }
 
   // Pass a card to each player in turn, and then another card.
@@ -440,166 +455,143 @@ contract Casino {
   }
 
   // Get score for a player (which represents how valuable their hand is).
-  function determineScore(address player) private view returns (uint) {
-    uint score = 0;
+  function determineScore(address player) private returns (uint) {
     Hand memory hand = hands[player];
-    uint firstCard = hand.first;
-    uint secondCard = hand.second;
+    firstCard = hand.first;
+    secondCard = hand.second;
 
-    if (hasRoyalFlush(firstCard, secondCard)) {
+    uint score = 0;
+
+    if (hasRoyalFlush()) {
       score = SCORE_ROYAL_FLUSH;
-    } else {
-      score = hasStraightFlush(firstCard, secondCard);
-      if (score != 0) {
-        score = SCORE_STRAIGHT_FLUSH + score;
-      } else {
-        score = hasFourOfAKind(firstCard, secondCard);
-        if (score != 0) {
-          score = SCORE_FOUR_OF_A_KIND + score;
-        } else {
-          score = hasFullHouse(firstCard, secondCard);
-          if (score != 0) {
-            score = SCORE_FULL_HOUSE + score;
-          } else {
-            score = hasFlush(firstCard, secondCard);
-            if (score != 0) {
-              score = SCORE_FLUSH + score;
-            } else {
-              score = hasStraight(firstCard, secondCard);
-              if (score != 0) {
-                score = SCORE_STRAIGHT + score;
-              } else {
-                score = hasThreeOfAKind(firstCard, secondCard);
-                if (score != 0) {
-                  score = SCORE_THREE_OF_A_KIND + score;
-                } else {
-                  score = hasTwoPair(firstCard, secondCard);
-                  if (score != 0) {
-                    score = SCORE_TWO_PAIRS + score;
-                  } else {
-                    score = hasPair(firstCard, secondCard);
-                    if (score != 0) {
-                      score = SCORE_PAIR + score;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+    } else if (hasStraightFlush() != 0) {
+      score = SCORE_STRAIGHT_FLUSH + hasStraightFlush();
+    } else if (hasFourOfAKind() != 0) {
+      score = SCORE_FOUR_OF_A_KIND + hasFourOfAKind();
+    } else if (hasFullHouse() != 0) {
+      score = SCORE_FULL_HOUSE + hasFullHouse();
+    } else if (hasFlush()) {
+      score = SCORE_FLUSH;
+    } else if (hasStraight() != 0) {
+      score = SCORE_STRAIGHT + hasStraight();
+    } else if (hasThreeOfAKind() != 0) {
+      score = SCORE_THREE_OF_A_KIND + hasThreeOfAKind();
+    // } else if (hasTwoPair() != 0) {
+    //   score = SCORE_TWO_PAIRS + hasTwoPair();
+    } else if (hasPair() != 0) {
+      score = SCORE_PAIR + hasPair();
     }
-    // That if-else was nasty, but has the optimisation that each check function,
-    // e.g. hasPair, does not have to be called twice. We'd like to have
-    // } else if (uint x = hasPair(...) != 0) {
-    // but it is not possible.
+    // This used to be a very heavily nested if-else statement that had the
+    // optimisation where each check function, which may be computationally
+    // heavy, was only called once. However it resulted in a stack too deep
+    // exception. The optimisation is sacrificed here, to avoid the exception,
+    // and we have to call each check twice.
+    // This is a memory-time trade off where we have opted to optimise memory.
 
     // Add on the high card value to their score, in case two scores are equal
     // and the winner is determined by the high card.
-    score = score + highCardScore(firstCard, secondCard);
+    score = score + highCardScore();
 
     return score;
   }
 
-  function hasRoyalFlush(uint first, uint second) private view returns (bool) {
+  function hasRoyalFlush() private view returns (bool) {
     return
     // first suit
-    tableOrHandContains(8, first, second)  && tableOrHandContains(9, first, second)  &&
-    tableOrHandContains(10, first, second) && tableOrHandContains(11, first, second) &&
-    tableOrHandContains(12, first, second) ||
+    tableOrHandContains(8)  && tableOrHandContains(9)  &&
+    tableOrHandContains(10) && tableOrHandContains(11) &&
+    tableOrHandContains(12) ||
     // second suit
-    tableOrHandContains(21, first, second) && tableOrHandContains(22, first, second) &&
-    tableOrHandContains(23, first, second) && tableOrHandContains(24, first, second) &&
-    tableOrHandContains(25, first, second) ||
+    tableOrHandContains(21) && tableOrHandContains(22) &&
+    tableOrHandContains(23) && tableOrHandContains(24) &&
+    tableOrHandContains(25) ||
     // third suit
-    tableOrHandContains(34, first, second) && tableOrHandContains(35, first, second) &&
-    tableOrHandContains(36, first, second) && tableOrHandContains(37, first, second) &&
-    tableOrHandContains(38, first, second) ||
+    tableOrHandContains(34) && tableOrHandContains(35) &&
+    tableOrHandContains(36) && tableOrHandContains(37) &&
+    tableOrHandContains(38) ||
     // fourth suit
-    tableOrHandContains(47, first, second) && tableOrHandContains(48, first, second) &&
-    tableOrHandContains(49, first, second) && tableOrHandContains(50, first, second) &&
-    tableOrHandContains(51, first, second);
+    tableOrHandContains(47) && tableOrHandContains(48) &&
+    tableOrHandContains(49) && tableOrHandContains(50) &&
+    tableOrHandContains(51);
   }
 
-  function hasStraightFlush(uint first, uint second) private view returns (uint) {
+  function hasStraightFlush() private view returns (uint) {
     for (uint j = 0; j < 51; j += 13) {
       // This inner loop could be optimised...
       for (uint i = j; i < j+7; i++) {
-        if (tableOrHandContains(i, first, second)   &&
-            tableOrHandContains(i+1, first, second) &&
-            tableOrHandContains(i+2, first, second) &&
-            tableOrHandContains(i+3, first, second) &&
-            tableOrHandContains(i+4, first, second))
+        if (tableOrHandContains(i)   &&
+            tableOrHandContains(i+1) &&
+            tableOrHandContains(i+2) &&
+            tableOrHandContains(i+3) &&
+            tableOrHandContains(i+4))
           return i+4;
       }
     }
     return 0;
   }
 
-  function hasFourOfAKind(uint first, uint second) private view returns (uint) {
+  function hasFourOfAKind() private view returns (uint) {
     for (uint i = 0; i < 13; i++) {
-      if (tableOrHandContains(i, first, second) &&
-          tableOrHandContains(i+13, first, second) &&
-          tableOrHandContains(i+26, first, second) &&
-          tableOrHandContains(i+39, first, second))
+      if (tableOrHandContains(i)    &&
+          tableOrHandContains(i+13) &&
+          tableOrHandContains(i+26) &&
+          tableOrHandContains(i+39))
         return i+1;
     }
     return 0;
   }
 
-  function hasFullHouse(uint first, uint second) private view returns (uint) {
-    uint threeOfAKind = hasThreeOfAKind(first, second);
-    uint pair = hasPair(first, second);
+  function hasFullHouse() private view returns (uint) {
+    uint threeOfAKind = hasThreeOfAKind();
+    uint pair = hasPair();
     if ((threeOfAKind != 0) && (pair != 0) && (threeOfAKind != pair))
       return threeOfAKind*13 + pair; // logic ensuring QQQ99 beats 999QQ
     return 0;
   }
 
-  function hasFlush(uint first, uint second) private view returns (uint) {
+  function hasFlush() private view returns (bool) {
     uint n = 0; // Number of cards within suit
 
     // For every suit
     for (uint i = 0; i < 52; i += 13) {
       n = 0;
-      if (first >= i && first <= i+12)
+      if (firstCard >= i && firstCard <= i+12)
         n++;
-      if (second >= i && second <= i+12)
+      if (secondCard >= i && secondCard <= i+12)
         n++;
 
       uint numTableCards = table.length;
       for (uint j = 0; j < numTableCards; j++) {
-        if (table[j] >= i && table[j] <= i+12) {
+        uint card = table[j];
+        if (card >= i && card <= i+12)
           n++;
-          if (n == 5)
-            break;
-        }
       }
 
-      if (n == 5)
+      if (n >= 5)
         break;
     }
 
-    return (n == 5) ? 1 : 0; // High card will determine between two flushes
+    return (n >= 5); // High card will determine between two flushes
   }
 
-  function hasStraight(uint first, uint second) private view returns (uint) {
-    for (uint i = 0; i < 7; i++) {
-      if (tableOrHandContainsMod(i, first, second)   &&
-          tableOrHandContainsMod(i+1, first, second) &&
-          tableOrHandContainsMod(i+2, first, second) &&
-          tableOrHandContainsMod(i+3, first, second) &&
-          tableOrHandContainsMod(i+4, first, second))
+  function hasStraight() private view returns (uint) {
+    for (uint i = 0; i < 9; i++) {
+      if (tableOrHandContainsMod(i)   &&
+          tableOrHandContainsMod(i+1) &&
+          tableOrHandContainsMod(i+2) &&
+          tableOrHandContainsMod(i+3) &&
+          tableOrHandContainsMod(i+4))
         return i+4;
     }
     return 0;
   }
 
-  function hasThreeOfAKind(uint first, uint second) private view returns (uint) {
+  function hasThreeOfAKind() private view returns (uint) {
     for (uint i = 0; i < 13; i++) {
-      bool _first = tableOrHandContains(i, first, second);
-      bool _second = tableOrHandContains(i+13, first, second);
-      bool _third = tableOrHandContains(i+26, first, second);
-      bool _fourth = tableOrHandContains(i+39, first, second);
+      bool _first = tableOrHandContains(i);
+      bool _second = tableOrHandContains(i+13);
+      bool _third = tableOrHandContains(i+26);
+      bool _fourth = tableOrHandContains(i+39);
       if (_first  && _second && _third  ||
           _first  && _second && _fourth ||
           _second && _third && _fourth)
@@ -608,34 +600,43 @@ contract Casino {
     return 0;
   }
 
-  function hasTwoPair(uint first, uint second) private view returns (uint) {
-    uint firstPair = hasPair(first, second);
-    if (firstPair-1 == 0)
+  function hasTwoPair() private view returns (uint) {
+    uint firstPair = hasPair();
+    if (firstPair == 0)
       return 0;
 
-    uint secondPair = 0;
-    for (uint i = 0; i < 13; i++) {
-      if (i == firstPair-1)
-        continue;
+    // actual value of first pair is (firstPair - 1)
 
-      bool _first = tableOrHandContains(i, first, second);
-      bool _second = tableOrHandContains(i+13, first, second);
-      bool _third = tableOrHandContains(i+26, first, second);
-      bool _fourth = tableOrHandContains(i+39, first, second);
+    uint secondPair = 0;
+    for (uint i = 0; i < firstPair-1; i++) {
+      bool _first = tableOrHandContains(i);
+      bool _second = tableOrHandContains(i+13);
+      bool _third = tableOrHandContains(i+26);
+      bool _fourth = tableOrHandContains(i+39);
       if (_first && _second || _first && _third || _first && _fourth ||
           _second && _third || _second && _fourth || _third && _fourth)
         secondPair = i+1;
     }
 
+    for (uint j = firstPair; j < 13; j++) {
+      bool __first = tableOrHandContains(j);
+      bool __second = tableOrHandContains(j+13);
+      bool __third = tableOrHandContains(j+26);
+      bool __fourth = tableOrHandContains(j+39);
+      if (__first && __second || __first && __third || __first && __fourth ||
+          __second && __third || __second && __fourth || __third && __fourth)
+        secondPair = j+1;
+    }
+
     return (secondPair != 0) ? secondPair*13 + firstPair : 0;
   }
 
-  function hasPair(uint first, uint second) private view returns (uint) {
+  function hasPair() private view returns (uint) {
     for (uint i = 0; i < 13; i++) {
-      bool _first = tableOrHandContains(i, first, second);
-      bool _second = tableOrHandContains(i+13, first, second);
-      bool _third = tableOrHandContains(i+26, first, second);
-      bool _fourth = tableOrHandContains(i+39, first, second);
+      bool _first = tableOrHandContains(i);
+      bool _second = tableOrHandContains(i+13);
+      bool _third = tableOrHandContains(i+26);
+      bool _fourth = tableOrHandContains(i+39);
       if (_first && _second || _first && _third || _first && _fourth ||
           _second && _third || _second && _fourth || _third && _fourth)
         return i+1;
@@ -643,13 +644,13 @@ contract Casino {
     return 0;
   }
 
-  function highCardScore(uint first, uint second) private pure returns (uint) {
-    return (first > second) ? first : second;
+  function highCardScore() private view returns (uint) {
+    return (firstCard > secondCard) ? firstCard : secondCard;
   }
 
-  function tableOrHandContains(uint n, uint first, uint second)
+  function tableOrHandContains(uint n)
   private view returns (bool) {
-    return tableContains(n) || handContains(n, first, second);
+    return tableContains(n) || handContains(n);
   }
 
   function tableContains(uint n) private view returns (bool) {
@@ -660,14 +661,12 @@ contract Casino {
     return false;
   }
 
-  function handContains(uint n, uint first, uint second)
-  private pure returns (bool) {
-    return n == first || n == second;
+  function handContains(uint n) private view returns (bool) {
+    return n == firstCard || n == secondCard;
   }
 
-  function tableOrHandContainsMod(uint n, uint first, uint second)
-  private view returns (bool) {
-    return tableContainsMod(n) || handContains(n, first%13, second%13);
+  function tableOrHandContainsMod(uint n) private view returns (bool) {
+    return tableContainsMod(n) || handContainsMod(n);
   }
 
   function tableContainsMod(uint n) private view returns (bool) {
@@ -678,6 +677,11 @@ contract Casino {
     return false;
   }
 
+  function handContainsMod(uint n) private view returns (bool) {
+    return n == (firstCard%13) || n == (secondCard%13);
+  }
+
+  /*
   function populateCardNames() private {
     cardNames[0] = "2C";
     cardNames[1] = "3C";
@@ -734,6 +738,6 @@ contract Casino {
     cardNames[49] = "QD";
     cardNames[50] = "KD";
     cardNames[51] = "AD";
-  }
+  */
 
 }
