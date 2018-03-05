@@ -37,7 +37,7 @@ contract Casino {
   uint private currentPlayer = 0; // Index of player currently betting
   address private lastPlayerToRaise = 0;
 
-  uint public round = 0; // only public for debug
+  uint public round = 0;
   uint private maxBet = 0;
   bool private smallBlindPayed = false;
   bool private bigBlindPayed = false;
@@ -129,9 +129,9 @@ contract Casino {
   }
 
   // Can be used to test shuffling but should be removed after that (debug)
-  function getDeck() public view whenPlaying returns (uint[52]) {
+  /* function getDeck() public view whenPlaying returns (uint[52]) {
     return deck;
-  }
+  } */
 
   function getTableCards() public view whenPlaying returns (uint[]) {
     return table;
