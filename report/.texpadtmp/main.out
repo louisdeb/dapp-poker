@@ -1,0 +1,15 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Implementation}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Game Logic}{section.2}% 3
+\BOOKMARK [3][-]{subsubsection.2.1.1}{Joining and Starting the Game}{subsection.2.1}% 4
+\BOOKMARK [3][-]{subsubsection.2.1.2}{Making Bets}{subsection.2.1}% 5
+\BOOKMARK [3][-]{subsubsection.2.1.3}{Win Conditions}{subsection.2.1}% 6
+\BOOKMARK [2][-]{subsection.2.2}{User Interaction}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.3}{Failures}{section.2}% 8
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Randomness}{subsection.2.3}% 9
+\BOOKMARK [3][-]{subsubsection.2.3.2}{Secrecy}{subsection.2.3}% 10
+\BOOKMARK [3][-]{subsubsection.2.3.3}{Stack Limitations}{subsection.2.3}% 11
+\BOOKMARK [1][-]{section.3}{Threat Model}{}% 12
+\BOOKMARK [2][-]{subsection.3.1}{Open Information}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.2}{Collusion}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.3}{Denial of Service}{section.3}% 15

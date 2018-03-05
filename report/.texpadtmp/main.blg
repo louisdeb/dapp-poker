@@ -1,0 +1,62 @@
+This is BibTeX, Version 0.99d (TeX Live 2015)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: /Users/louis/Documents/paper/.texpadtmp/main.aux
+The style file: plain.bst
+Database file #1: ../sample.bib
+Warning--I didn't find a database entry for "countingcards"
+Warning--to sort, need author or key in texasHoldEm
+Warning--to sort, need author or key in abspoker
+Warning--to sort, need author or key in trust
+Warning--to sort, need author or key in oraclize
+Warning--to sort, need author or key in shuffling
+Warning--to sort, need author or key in stack
+Warning--to sort, need author or key in stackrefactor
+Warning--empty author in abspoker
+Warning--empty journal in abspoker
+Warning--empty year in abspoker
+Warning--empty journal in virtue
+Warning--empty year in virtue
+Warning--empty journal in random
+Warning--empty year in random
+You've used 9 entries,
+            2118 wiz_defined-function locations,
+            528 strings with 5152 characters,
+and the built_in function-call counts, 1531 in all, are:
+= -- 137
+> -- 21
+< -- 0
++ -- 13
+- -- 4
+* -- 68
+:= -- 202
+add.period$ -- 17
+call.type$ -- 9
+change.case$ -- 29
+chr.to.int$ -- 0
+cite$ -- 23
+duplicate$ -- 72
+empty$ -- 191
+format.name$ -- 4
+if$ -- 350
+int.to.chr$ -- 0
+int.to.str$ -- 9
+missing$ -- 3
+newline$ -- 38
+num.names$ -- 4
+pop$ -- 72
+preamble$ -- 1
+purify$ -- 20
+quote$ -- 0
+skip$ -- 66
+stack$ -- 0
+substring$ -- 45
+swap$ -- 6
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 36
+warning$ -- 14
+while$ -- 4
+width$ -- 10
+write$ -- 63
+(There were 15 warnings)

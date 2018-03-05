@@ -1,0 +1,40 @@
+\begin{thebibliography}{1}
+
+\bibitem{trust}
+Blockchain week 2016: Virtue poker - ryan gittleson.
+\newblock \url{https://www.youtube.com/watch?v=8lClBD62Mys}.
+
+\bibitem{shuffling}
+Commit: Add non-working pseudo random shuffle alg.
+\newblock
+  \url{https://github.com/louisdeb/dapp-poker/commit/1f6d02410a2c9f94581da96c0da833f825304988}.
+
+\bibitem{stackrefactor}
+Commit: Fix stack size issues when determining winner.
+\newblock
+  \url{https://github.com/louisdeb/dapp-poker/commit/b9c6885a1d4b45876de6c49d646cfc3568f3a4f3}.
+
+\bibitem{oraclize}
+Oraclize.
+\newblock \url{http://www.oraclize.it/}.
+
+\bibitem{stack}
+Solidity issues: Stack too deep #267.
+\newblock \url{https://github.com/ethereum/solidity/issues/267}.
+
+\bibitem{texasHoldEm}
+Texas hold 'em.
+\newblock \url{https://en.wikipedia.org/wiki/Texas_hold_%27em}.
+
+\bibitem{abspoker}
+Ub \& absolute poker to file bankruptcy.
+
+\bibitem{virtue}
+Virtue Poker.
+\newblock Faq about virtue poker.
+
+\bibitem{random}
+Arseny Reutov.
+\newblock Predicting random numbers in ethereum smart contracts.
+
+\end{thebibliography}

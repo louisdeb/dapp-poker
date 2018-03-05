@@ -1,0 +1,23 @@
+There are a number of ways an adversary could attack our implementation of poker. Some ways are a result of failures discussed in §2.3, others are a result of the general form of implementation.
+
+\subsection{Open Information}
+
+The lack of randomness, discussed in §2.3.1, leaves our deck unshuffled. Any adversary could track the number of players, and work out what cards they hold in their hand. Furthermore the adversary could predict the river based on the number of players.
+
+Should randomness be implemented and the deck shuffled, the lack of secrecy, discussed in §2.3.2, means an adversary could read the deck and player hands directly from the blockchain. They could then determine whether it is worth them partaking in betting. An innocent player stands to lose a lot against this kind of adversary. The adversary stands to lose, at maximum, the cost of the big blind.
+
+\subsection{Collusion}
+
+Our implementation reveals the other players in the game once the game has started. The thought behind this was to stop players attempting to dodge games with specific players they may dislike playing against. Furthermore, if a service was to be built where the player was entered into a random game, instead of joining a contract by being passed the address, it would stop players leaving games before finding a game in which their partner, another adversary, is also playing. \footnote{A cost paid on joining games would discourage adversaries iterating through multiple games until finding their desired partners - in a matchmaking environment.}
+
+However in our implementation, two players can discuss, outside the scope of the game, their cards. Counting cards \cite{countingcards} is a common problem in the gambling industry. A player can be asked to leave and barred from a casino if the casino suspects them of counting cards. Counting cards involves predicting odds of river cards and other players cards by tracking which cards have been played. Knowing another player's (the adversary's partner's) cards, greatly increases chances of predicting other cards yet to be shown in the game. An adversary can then make more informed betting decisions based on this information, giving him a better chance of getting involved in a winning pot, or folding from a losing pot.
+
+\subsection{Denial of Service}
+
+In current implementations of online poker contain a timeout while waiting for each players bet. When a player does not make their bet in time, if the player is the highest bidder, they simply check (and pass play to the next player). If the player is not the highest bidder, their hand is folded and their stake in the pot lost.
+
+My implementation does not contain any timeout functionality. This means that any player can choose to not make a bid. This results in the game being frozen, as the current player is never passed on.
+
+An adversary may choose to freeze the game if he has a losing hand, or simply wants to ensure no player receives any amount of the pot.
+
+A timeout functionality would be necessary for an implementation which would be deployed on the main network.
